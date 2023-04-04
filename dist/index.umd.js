@@ -299,6 +299,10 @@
     const {
       merge
     } = Schema;
+    /**
+     *
+     * @type {{}}
+     */
     const components = {};
     const options = {
       tagNodeToString(node) {
@@ -617,13 +621,12 @@
     function createComponent(name, defaults) {
       const render = defaults.render;
       delete defaults['render'];
-      const instance = Object.create(defaults);
       return components[name] = function (props, content) {
         delete props['render'];
         /**
          * @type {object}
          */
-        const config = merge({}, instance, props || {}, {
+        const config = merge({}, defaults, props || {}, {
           content
         });
         return new Component(config, render);
