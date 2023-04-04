@@ -1,0 +1,364 @@
+import { Type, Schema } from '@kosatyi/is-type';
+
+const {isPlainObject, isString, isFunction, isArray, isNumber} = Type;
+
+const {merge} = Schema;
+
+const components = {};
+
+const options = {
+    tagNodeToString(node){
+        return JSON.stringify(node.toJSON())
+    },
+    isSafeString(node) {
+        return node && isFunction(node.toString)
+    }
+};
+
+function configureComponent(params = {}){
+    if( isFunction(params.tagNodeToString) ){
+        options.tagNodeToString = params.tagNodeToString;
+    }
+    if( isFunction(params.isSafeString) ){
+        options.isSafeString = params.isSafeString;
+    }
+}
+
+function ComponentNode() {
+
+}
+
+ComponentNode.prototype = {
+    parentNode: null,
+    toParent(parent) {
+        if (parent instanceof ComponentNode) {
+            this.parentNode = parent;
+        }
+        return this
+    },
+    isSafeString(node) {
+        return options.isSafeString(node)
+    },
+    getNode(node) {
+        if (node instanceof ComponentNode) {
+            return node
+        }
+        if (this.isSafeString(node)) {
+            return new ComponentSafeNode(node)
+        }
+        if (isString(node) || isNumber(node)) {
+            return new ComponentTextNode(node)
+        }
+        if (isPlainObject(node)) {
+            if (isString(node.tagName) && isPlainObject(node.attributes)) {
+                return new ComponentTagNode(
+                    node.tagName,
+                    node.attributes,
+                    node.children || []
+                )
+            }
+        }
+    },
+    prependTo(node) {
+        if (node instanceof ComponentTagNode) {
+            node.prepend(this);
+        }
+    },
+    appendTo(node) {
+        if (node instanceof ComponentTagNode) {
+            node.append(this);
+        }
+        return this
+    },
+    remove() {
+        if (this.parentNode instanceof ComponentTagNode) {
+            const children = this.parentNode.children;
+            const index = children.indexOf(this);
+            if (index > -1) {
+                children.splice(index, 1);
+            }
+        }
+    },
+};
+
+/**
+ * @extends ComponentNode
+ * @param content
+ * @constructor
+ */
+function ComponentSafeNode(content) {
+    ComponentNode.call(this);
+    this.content = content.toString();
+}
+
+Object.setPrototypeOf(ComponentSafeNode.prototype, ComponentNode.prototype);
+
+Object.assign(ComponentSafeNode.prototype, {
+    toString() {
+        return this.content
+    },
+    toJSON() {
+        return {
+            content: this.content,
+        }
+    },
+});
+
+/**
+ * @extends ComponentNode
+ * @param text
+ * @constructor
+ */
+function ComponentTextNode(text) {
+    ComponentNode.call(this);
+    this.text = text;
+}
+
+Object.setPrototypeOf(ComponentTextNode.prototype, ComponentNode.prototype);
+
+Object.assign(ComponentTextNode.prototype, {
+    toString() {
+        return this.text
+    },
+    toJSON() {
+        return {
+            text: this.text,
+        }
+    },
+});
+
+/**
+ * @extends ComponentNode
+ * @param tagName
+ * @param attributes
+ * @param children
+ * @constructor
+ */
+function ComponentTagNode(tagName, attributes, children) {
+    ComponentNode.call(this);
+    this.tagName = tagName;
+    this.attributes = {};
+    this.children = [];
+    if (isPlainObject(attributes)) {
+        Object.entries(attributes).forEach(([name, value]) => {
+            this.attr(name, value);
+        });
+    }
+    if (isArray(children)) {
+        children.forEach(item => {
+            this.append(item);
+        });
+    } else {
+        this.append(children);
+    }
+}
+
+/**
+ *
+ */
+Object.setPrototypeOf(ComponentTagNode.prototype, ComponentNode.prototype);
+/**
+ *
+ */
+Object.assign(ComponentTagNode.prototype, {
+    /**
+     *
+     * @param node
+     * @return {ComponentTagNode}
+     */
+    append(node) {
+        node = this.getNode(node);
+        if (node instanceof ComponentNode) {
+            this.children.push(node.toParent(this));
+        }
+        return this
+    },
+    /**
+     *
+     * @param node
+     * @return {ComponentTagNode}
+     */
+    prepend(node) {
+        node = this.getNode(node);
+        if (node instanceof ComponentNode) {
+            this.children.unshift(node.toParent(this));
+        }
+        return this
+    },
+    /**
+     *
+     * @return {ComponentTagNode}
+     */
+    empty() {
+        this.children.forEach(item => {
+            item.toParent(null);
+        });
+        this.children = [];
+        return this
+    },
+    /**
+     *
+     * @returns {{children: ([]|[ComponentTextNode]|*), attributes: {} & *, tagName}}
+     */
+    toJSON() {
+        return {
+            tagName: this.tagName,
+            attributes: this.attributes,
+            children: this.children,
+        }
+    },
+    /**
+     *
+     * @returns {string}
+     */
+    toString() {
+        return options.tagNodeToString(this)
+    },
+    /**
+     *
+     * @returns {string[]}
+     */
+    classList() {
+        return String(this.attributes.class || '')
+            .trim()
+            .split(/\s+/)
+    },
+    addClass() {
+        const tokens = [].slice.call(arguments);
+        const classList = this.classList();
+        tokens.forEach(token => {
+            if (!token) return true
+            if (classList.indexOf(token) > -1) return true
+            classList.push(token);
+        });
+        this.attributes.class = classList.join(' ').trim();
+        return this
+    },
+    removeClass() {
+        const tokens = [].slice.call(arguments);
+        const classList = this.classList();
+        tokens.forEach((token, index) => {
+            if (!token) return true
+            if (classList.indexOf(token) < 0) return
+            classList.splice(index, 1);
+        });
+        this.attributes.class = classList.join(' ').trim();
+        return this
+    },
+    attr(name, value) {
+        if (name) {
+            if (name.indexOf('data') === 0) {
+                name = name.replace(/[A-Z]/g, '-$&').toLowerCase();
+            }
+            this.attributes[name] = value;
+        }
+        return this
+    },
+    text(content) {
+        this.children = [new ComponentTextNode(content)];
+    },
+});
+
+/**
+ * @typedef {function} ComponentCallback
+ * @param {ComponentTagNode} node
+ * @param {object} props
+ * @param {Component} [self]
+ * @returns ComponentNode | void
+ */
+
+/**
+ * @typedef {object} ComponentParams
+ * @property {string} tag
+ * @property {object} attrs
+ * @property {Array|string} [content]
+ * @property {ComponentCallback} [render]
+ */
+
+/**
+ *
+ * @param {ComponentParams} props
+ * @param {ComponentCallback} render
+ * @return {ComponentNode}
+ * @constructor
+ */
+
+function Component(props, render) {
+    let replace;
+    let node = new ComponentTagNode(props.tag, props.attrs, props.content);
+    if (isFunction(render)) replace = render(node, props, this);
+    return replace ? replace : node
+}
+
+Component.prototype = {
+    /**
+     *
+     * @param {string} tag
+     * @param {object} attrs
+     * @param {any[]} [children]
+     * @returns {ComponentNode|ComponentTagNode}
+     */
+    create(tag, attrs, children) {
+        return new ComponentTagNode(tag, attrs, children)
+    },
+    /**
+     *
+     * @param {string} name
+     * @param {object} props
+     * @param {any[]} [content]
+     * @return {ComponentNode|ComponentTagNode}
+     */
+    call(name, props, content) {
+        const instance = components[name];
+        if (instance) {
+            return instance(props || {}, content)
+        }
+    },
+    /**
+     *
+     * @param params
+     * @param props
+     * @param extra
+     * @returns {{[p: string]: any}}
+     */
+    pick(params, props, extra) {
+        extra = extra || {};
+        params = Object.entries(params).filter(([name]) => {
+            return props.indexOf(name) !== -1
+        });
+        return Object.assign(Object.fromEntries(params), extra)
+    },
+};
+
+/**
+ *
+ * @param {string} name
+ * @param {ComponentParams} defaults
+ * @return {function(params:{},content:[]): Component}
+ */
+function createComponent(name, defaults) {
+    const render = defaults.render;
+    delete defaults['render'];
+    const instance = Object.create(defaults);
+    return (components[name] = function (props, content) {
+        delete props['render'];
+        /**
+         * @type {object}
+         */
+        const config = merge({}, instance, props || {}, {
+            content
+        });
+        return new Component(config, render)
+    })
+}
+
+/**
+ *
+ * @param name
+ * @returns {*}
+ */
+function getComponent(name) {
+    return components[name]
+}
+
+export { configureComponent, createComponent, getComponent };

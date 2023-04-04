@@ -1,0 +1,26 @@
+{
+  "name": "ejs-component",
+  "version": "0.0.0",
+  "description": "html object component",
+  "main": "dist/index.umd.js",
+  "module": "dist/index.esm.js",
+  "files": [
+    "dist/index.umd.js",
+    "dist/index.esm.js"
+  ],
+  "scripts": {
+    "test": "",
+    "start": "rollup -c -w --bundleConfigAsCjs",
+    "build": "rollup -c --bundleConfigAsCjs",
+    "preversion": "npm test",
+    "version": "npm run build && git add -A dist",
+    "postversion": "git push && git push --tags"
+  },
+  "author": "Stepan Kosatyi",
+  "license": "MIT",
+  "dependencies": {
+    "@kosatyi/is-type": "^0.0.5",
+    "@kosatyi/rollup": "^0.0.8"
+  },
+  "devDependencies": {}
+}
