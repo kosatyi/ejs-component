@@ -314,6 +314,9 @@
       }
     };
     function configureComponent(params = {}) {
+      if (isFunction(params.componentCreated)) {
+        options.componentCreated = params.componentCreated;
+      }
       if (isFunction(params.tagNodeToString)) {
         options.tagNodeToString = params.tagNodeToString;
       }
