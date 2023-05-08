@@ -356,7 +356,7 @@ function createComponent(name, defaults) {
         return new Component(config, render)
     }
     components[name] = component;
-    options.componentCreated(component);
+    options.componentCreated(name,component);
     return component
 }
 
