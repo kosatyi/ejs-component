@@ -10,6 +10,9 @@ const {merge} = Schema
 const components = {}
 
 const options = {
+    componentCreated(component){
+
+    },
     tagNodeToString(node){
         return JSON.stringify(node.toJSON())
     },
@@ -342,7 +345,7 @@ Component.prototype = {
 export function createComponent(name, defaults) {
     const render = defaults.render
     delete defaults['render']
-    return (components[name] = function (props, content) {
+    function component(props, content) {
         delete props['render']
         /**
          * @type {object}
@@ -351,7 +354,10 @@ export function createComponent(name, defaults) {
             content
         })
         return new Component(config, render)
-    })
+    }
+    components[name] = component
+    options.componentCreated(component);
+    return component
 }
 
 /**
