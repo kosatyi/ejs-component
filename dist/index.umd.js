@@ -613,8 +613,8 @@
 
     /**
      * @typedef {object} ComponentParams
-     * @property {string} tag
-     * @property {object} attrs
+     * @property {string} [tag]
+     * @property {object} [attrs]
      * @property {Array|string} [content]
      * @property {ComponentCallback} [render]
      */
