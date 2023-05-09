@@ -635,7 +635,7 @@
         node = new ComponentListNode(props.content);
       }
       if (isFunction(render)) replace = render(node, props, this);
-      return replace instanceof ComponentNode ? replace : node;
+      return replace ? replace : node;
     }
     Component.prototype = {
       /**
