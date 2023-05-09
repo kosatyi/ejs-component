@@ -395,13 +395,14 @@ Component.prototype = {
      * @param {string} tag
      * @param {object} [attrs]
      * @param {*} [children]
-     * @returns {ComponentNode|ComponentTagNode}
+     * @returns {ComponentTagNode}
      */
     create(tag, attrs, children) {
         return new ComponentTagNode(tag, attrs, children)
     },
     /**
      * @param {any[]} [children]
+     * @returns {ComponentListNode}
      */
     list(children){
         return new ComponentListNode(children)
