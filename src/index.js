@@ -445,13 +445,14 @@ export function createComponent(name, defaults) {
     const render = defaults.render
     delete defaults['render']
     function component(props, content) {
+        props = props || {}
         delete props['render']
-        /**
-         * @type {object}
-         */
-        const config = merge({}, defaults, props || {}, {
+        const config = merge({}, defaults, props , {
             content
         })
+        if( content ) {
+            config.content = content
+        }
         return new Component(config, render)
     }
     components[name] = component
