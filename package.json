@@ -1,6 +1,6 @@
 {
   "name": "ejs-component",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "html object component",
   "main": "dist/index.umd.js",
   "module": "dist/index.esm.js",

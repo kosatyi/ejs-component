@@ -548,7 +548,7 @@
        */
       attr(name, value) {
         if (name) {
-          if (name.indexOf('data') === 0) {
+          if (name.indexOf('data') === 0 || name.indexOf('aria') === 0) {
             name = name.replace(/[A-Z]/g, '-$&').toLowerCase();
           }
           this.attributes[name] = value;
