@@ -113,6 +113,9 @@ Object.assign(ComponentSafeNode.prototype, {
     },
 })
 
+
+
+
 /**
  * @extends ComponentNode
  * @param text
@@ -269,6 +272,63 @@ Object.assign(ComponentTagNode.prototype, {
 })
 
 /**
+ * @extends ComponentNode
+ * @param list
+ * @constructor
+ */
+function ComponentListNode(list) {
+    ComponentNode.call(this)
+    this.children = []
+    if (isArray(list)) {
+        list.forEach(item => {
+            this.append(item)
+        })
+    } else {
+        this.append(list)
+    }
+}
+
+/**
+ *
+ */
+Object.setPrototypeOf(ComponentListNode.prototype, ComponentNode.prototype)
+/**
+ *
+ */
+Object.assign(ComponentListNode.prototype, {
+    toString() {
+        return this.children.map( item => item.toString() ).join('')
+    },
+    toJSON() {
+        return this.children
+    },
+    /**
+     *
+     * @param node
+     * @returns {ComponentListNode}
+     */
+    append(node) {
+        node = this.getNode(node)
+        if (node instanceof ComponentNode) {
+            this.children.push(node.toParent(this))
+        }
+        return this
+    },
+    /**
+     *
+     * @param node
+     * @return {ComponentListNode}
+     */
+    prepend(node) {
+        node = this.getNode(node)
+        if (node instanceof ComponentNode) {
+            this.children.unshift(node.toParent(this))
+        }
+        return this
+    }
+})
+
+/**
  * @typedef {function} ComponentCallback
  * @param {ComponentTagNode} node
  * @param {object} props
@@ -292,11 +352,16 @@ Object.assign(ComponentTagNode.prototype, {
  * @constructor
  */
 
+
 function Component(props, render) {
-    let replace
-    let node = new ComponentTagNode(props.tag, props.attrs, props.content)
+    let node,replace
+    if( isString(props.tag) ) {
+        node = new ComponentTagNode(props.tag, props.attrs, props.content)
+    } else {
+        node = new ComponentListNode(props.content)
+    }
     if (isFunction(render)) replace = render(node, props, this)
-    return replace ? replace : node
+    return replace instanceof ComponentNode ? replace : node
 }
 
 Component.prototype = {
@@ -309,6 +374,12 @@ Component.prototype = {
      */
     create(tag, attrs, children) {
         return new ComponentTagNode(tag, attrs, children)
+    },
+    /**
+     * @param {any[]} [children]
+     */
+    list(children){
+        return new ComponentListNode(children)
     },
     /**
      *
