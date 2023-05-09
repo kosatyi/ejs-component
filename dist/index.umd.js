@@ -666,8 +666,8 @@
       /**
        *
        * @param {string} tag
-       * @param {object} attrs
-       * @param {any[]} [children]
+       * @param {object} [attrs]
+       * @param {*} [children]
        * @returns {ComponentNode|ComponentTagNode}
        */
       create(tag, attrs, children) {
