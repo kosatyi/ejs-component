@@ -507,9 +507,13 @@
        *
        * @returns {string[]}
        */
-      classList() {
+      classList(value) {
         return String(this.attributes.class || '').trim().split(/\s+/);
       },
+      /**
+       *
+       * @returns {ComponentTagNode}
+       */
       addClass() {
         const tokens = [].slice.call(arguments);
         const classList = this.classList();
@@ -521,6 +525,10 @@
         this.attributes.class = classList.join(' ').trim();
         return this;
       },
+      /**
+       *
+       * @returns {ComponentTagNode}
+       */
       removeClass() {
         const tokens = [].slice.call(arguments);
         const classList = this.classList();
@@ -532,6 +540,12 @@
         this.attributes.class = classList.join(' ').trim();
         return this;
       },
+      /**
+       *
+       * @param name
+       * @param value
+       * @returns {ComponentTagNode}
+       */
       attr(name, value) {
         if (name) {
           if (name.indexOf('data') === 0) {
@@ -540,6 +554,17 @@
           this.attributes[name] = value;
         }
         return this;
+      },
+      /**
+       *
+       * @param props
+       */
+      attrs(props) {
+        if (isPlainObject(props)) {
+          Object.entries(props).forEach(([name, value]) => {
+            this.attr(name, value);
+          });
+        }
       },
       text(content) {
         this.children = [new ComponentTextNode(content)];
