@@ -8,10 +8,10 @@ const { merge } = Schema;
 const components = {};
 /**
  *
- * @type {{componentCreated(*), isSafeString(*): *, tagNodeToString(*): string}}
+ * @type {object}
  */
 const options = {
-    componentCreated(component) {},
+    componentCreated(name, component) {},
     tagNodeToString(node) {
         return JSON.stringify(node.toJSON())
     },
@@ -452,10 +452,7 @@ function createComponent(name, instance) {
     const render = instance.render;
     const defaults = instance.props;
     function component(props, content) {
-        props = props || {};
-        const config = merge({}, defaults, props, {
-            content,
-        });
+        const config = merge({}, defaults || {}, props || {});
         if (content) {
             config.content = content;
         }
