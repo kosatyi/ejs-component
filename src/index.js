@@ -1,41 +1,46 @@
-import {Type,Schema} from "@kosatyi/is-type";
-
-const {isPlainObject, isString, isFunction, isArray, isNumber} = Type
-
-const {merge} = Schema
+const { Type, Schema } = require('@kosatyi/is-type')
+const { isPlainObject, isString, isFunction, isArray, isNumber } = Type
+const { merge } = Schema
 /**
  *
  * @type {{}}
  */
 const components = {}
-
+/**
+ *
+ * @type {object}
+ */
 const options = {
-    componentCreated(component){
-
-    },
-    tagNodeToString(node){
+    componentCreated(name, component) {},
+    tagNodeToString(node) {
         return JSON.stringify(node.toJSON())
     },
     isSafeString(node) {
         return node && isFunction(node.toString)
-    }
+    },
 }
 
-export function configureComponent(params = {}){
-    if( isFunction(params.componentCreated) ){
+/**
+ *
+ * @param params
+ */
+function configureComponent(params = {}) {
+    if (isFunction(params.componentCreated)) {
         options.componentCreated = params.componentCreated
     }
-    if( isFunction(params.tagNodeToString) ){
+    if (isFunction(params.tagNodeToString)) {
         options.tagNodeToString = params.tagNodeToString
     }
-    if( isFunction(params.isSafeString) ){
+    if (isFunction(params.isSafeString)) {
         options.isSafeString = params.isSafeString
     }
 }
 
-function ComponentNode() {
-
-}
+/**
+ *
+ * @constructor
+ */
+function ComponentNode() {}
 
 ComponentNode.prototype = {
     parentNode: null,
@@ -112,9 +117,6 @@ Object.assign(ComponentSafeNode.prototype, {
         }
     },
 })
-
-
-
 
 /**
  * @extends ComponentNode
@@ -230,7 +232,7 @@ Object.assign(ComponentTagNode.prototype, {
      *
      * @returns {string[]}
      */
-    classList(value) {
+    classList() {
         return String(this.attributes.class || '')
             .trim()
             .split(/\s+/)
@@ -285,9 +287,9 @@ Object.assign(ComponentTagNode.prototype, {
      * @param props
      */
     attrs(props) {
-        if( isPlainObject(props) ) {
-            Object.entries(props).forEach(([name,value])=>{
-                this.attr(name,value)
+        if (isPlainObject(props)) {
+            Object.entries(props).forEach(([name, value]) => {
+                this.attr(name, value)
             })
         }
     },
@@ -322,7 +324,7 @@ Object.setPrototypeOf(ComponentListNode.prototype, ComponentNode.prototype)
  */
 Object.assign(ComponentListNode.prototype, {
     toString() {
-        return this.children.map( item => item.toString() ).join('')
+        return this.children.map(item => item.toString()).join('')
     },
     toJSON() {
         return this.children
@@ -350,7 +352,7 @@ Object.assign(ComponentListNode.prototype, {
             this.children.unshift(node.toParent(this))
         }
         return this
-    }
+    },
 })
 
 /**
@@ -366,6 +368,11 @@ Object.assign(ComponentListNode.prototype, {
  * @property {string} [tag]
  * @property {object} [attrs]
  * @property {Array|string} [content]
+ */
+
+/**
+ * @typedef {object} ComponentInstance
+ * @property {ComponentParams} [props]
  * @property {ComponentCallback} [render]
  */
 
@@ -377,10 +384,9 @@ Object.assign(ComponentListNode.prototype, {
  * @constructor
  */
 
-
 function Component(props, render) {
-    let node,replace
-    if( isString(props.tag) ) {
+    let node, replace
+    if (isString(props.tag)) {
         node = new ComponentTagNode(props.tag, props.attrs, props.content)
     } else {
         node = new ComponentListNode(props.content)
@@ -404,7 +410,7 @@ Component.prototype = {
      * @param {any[]} [children]
      * @returns {ComponentListNode}
      */
-    list(children){
+    list(children) {
         return new ComponentListNode(children)
     },
     /**
@@ -439,25 +445,21 @@ Component.prototype = {
 /**
  *
  * @param {string} name
- * @param {ComponentParams} defaults
+ * @param {ComponentInstance} instance
  * @return {function(params:{},content:[]): Component}
  */
-export function createComponent(name, defaults) {
-    const render = defaults.render
-    delete defaults['render']
+function createComponent(name, instance) {
+    const render = instance.render
+    const defaults = instance.props
     function component(props, content) {
-        props = props || {}
-        delete props['render']
-        const config = merge({}, defaults, props , {
-            content
-        })
-        if( content ) {
+        const config = merge({}, defaults || {}, props || {})
+        if (content) {
             config.content = content
         }
         return new Component(config, render)
     }
     components[name] = component
-    options.componentCreated(name,component);
+    options.componentCreated(name, component)
     return component
 }
 
@@ -466,6 +468,10 @@ export function createComponent(name, defaults) {
  * @param name
  * @returns {*}
  */
-export function getComponent(name) {
+function getComponent(name) {
     return components[name]
 }
+
+exports.getComponent = getComponent
+exports.configureComponent = configureComponent
+exports.createComponent = createComponent
