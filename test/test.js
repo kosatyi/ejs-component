@@ -3,6 +3,7 @@ const {test, expect, describe, beforeEach, todo} = require('@jest/globals')
 const {
     createComponent,
     configureComponent,
+    getComponent,
     ComponentArray,
     ComponentNode,
     ComponentTextNode,
@@ -31,26 +32,71 @@ describe('ComponentTagNode', () => {
     })
 })
 describe('ComponentTagNode', () => {
-    const node = new ComponentTagNode('div', {
+
+    const node = new ComponentTagNode('button', {
+        type: 'submit',
         dataTestAttr: 'name',
         ariaTestAttr: 'name'
-    }, [
-        'content'
-    ])
+    }, ['submit'])
+
     test('toString', () => {
         node.toString()
     })
     test('toJSON', () => {
         node.toJSON()
     })
+
+    test('addClass', () => {
+        const node = new ComponentTagNode('div')
+        node.addClass()
+        node.addClass('')
+        node.addClass('test','test')
+    })
+
+    test('removeClass', () => {
+        const node = new ComponentTagNode('div',{class: 'test'})
+        node.removeClass()
+        node.removeClass('','test')
+        node.removeClass('test')
+    })
+    test('append', () => {
+        new ComponentTagNode('div').append({})
+        new ComponentTagNode('div').append('string')
+        new ComponentTagNode('div').append(new ComponentTagNode('div'))
+        new ComponentTagNode('div').append({
+            value: 'value',
+            length: 5,
+            toString(){
+                return this.value
+            }
+        })
+        new ComponentTagNode('div').append({
+            tag: 'div',
+            attrs: {
+
+            }
+        })
+    })
+    test('prepend', () => {
+        new ComponentTagNode('div').prepend({})
+        new ComponentTagNode('div').prepend('string')
+        new ComponentTagNode('div').prepend(new ComponentTagNode('div'))
+    })
     test('appendTo', () => {
-        new ComponentTextNode('test').appendTo(node)
+        new ComponentTagNode('div').appendTo(node)
+        new ComponentTagNode('div').appendTo('string')
     })
     test('prependTo', () => {
-        new ComponentTextNode('test').prependTo(node)
+        new ComponentTagNode('test').prependTo(node)
+        new ComponentTagNode('test').prependTo('string')
     })
     test('remove', () => {
-        new ComponentTextNode('test').appendTo(node).remove()
+        const parent = new ComponentTagNode('div')
+        const child = new ComponentTagNode('test')
+        child.remove()
+        child.parentNode = parent
+        child.remove()
+        child.appendTo(node).remove()
     })
 })
 
@@ -99,74 +145,73 @@ describe('ComponentArray', () => {
 
 describe('createComponent', () => {
 
-    const component = createComponent('test', {
+    const listComponent = createComponent('list', {})
+
+    const replaceComponent = createComponent('header', {
         props: {
-            tag: 'div',
+            tag: 'header',
             attrs: {}
         },
-        render(node, props, self ) {
-            node.append('string')
-            node.append(1)
-            node.append(self.create('div'))
-            node.append({
-                value: 'myValue',
-                length: 4,
-                toString(){
-                    return this.value
-                }
+        render(node,props,self){
+            return self.create('div',{
+                class: 'header'
             })
-            node.append({
-                tagName: 'span',
-                attributes: {},
-                content: 'test'
-            })
-            node.addClass('container')
-            node.removeClass('container')
-            node.at
+        },
+    })
+
+    const tagComponent = createComponent('button', {
+        props: {
+            tag: 'button',
+            attrs: {}
+        },
+        render(node,props,self){
+            self.create('div')
+            self.call('undefined')
+            self.call('list')
+            self.list()
+            self.pick(props,['tag','attrs'])
+            self.join([1,2,3],'-')
+            self.hasProp(props,'tag')
+        }
+    })
+
+    const errorComponent = createComponent('failed', {
+        props:{},
+        render(){
+            throw Error('failed')
         }
     })
 
 
+
     test('createComponent', () => {
 
-        const node = component()
+        tagComponent({},['content'])
+        listComponent()
+        errorComponent()
+        replaceComponent({
 
-        node.append('string')
-
-        node.append(1)
-
-        node.append(new ComponentTagNode('div'))
-
-        node.append({
-            value: 'myValue',
-            length: 4,
-            toString(){
-                return this.value
-            }
         })
 
-        node.append({
-            tagName: 'span',
-            attributes: {},
-            content: 'test'
-        })
+    })
+})
 
-        node.addClass('container')
-        node.removeClass('container')
-        node.attr({
-            ariaLabel: 'testArea',
-            dataComponent: 'test'
-        })
+describe('getComponent', () => {
+    test('getComponent', () => {
+        getComponent('test')
     })
 })
 
 describe('configureComponent', () => {
     test('configureComponent', () => {
+        configureComponent()
         configureComponent({
-            componentCreated(name, component) {},
-            escapeValue(value){},
-            tagNodeToString(node) {},
-            isSafeString(node) {},
+            componentCreated() {},
+            escapeValue(){},
+            tagNodeToString() {},
+            isSafeString() {},
         })
     })
 })
+
+

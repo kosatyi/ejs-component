@@ -25,7 +25,7 @@ const {merge} = Schema;
 
 /**
  * @typedef {Object} ComponentTagNodeInstance
- * @property {ComponentParams} props
+ * @property {ComponentParams} [props]
  * @property {ComponentCallback} [render]
  */
 
@@ -99,7 +99,7 @@ function configureComponent(params = {}) {
 }
 
 /**
- *
+ * @mixes Array
  * @constructor
  */
 function ComponentArray(list) {
@@ -111,7 +111,6 @@ Object.setPrototypeOf(ComponentArray.prototype, Array.prototype);
 ComponentArray.prototype.toString = function () {
     return [].slice.call(this).join('')
 };
-
 ComponentArray.prototype.toJSON = function () {
     return [].slice.call(this)
 };
@@ -148,11 +147,11 @@ ComponentNode.prototype = {
             return new ComponentTextNode(node)
         }
         if (isPlainObject(node)) {
-            if (isString(node.tagName) && isPlainObject(node.attributes)) {
+            if (isString(node.tag) && isPlainObject(node.attrs)) {
                 return new ComponentTagNode(
-                    node.tagName,
-                    node.attributes,
-                    node.children || []
+                    node.tag,
+                    node.attrs,
+                    node.content || []
                 )
             }
         }
@@ -170,10 +169,10 @@ ComponentNode.prototype = {
     },
     remove() {
         if (this.hasChildNodes(this.parentNode)) {
-            const children = this.parentNode.content;
-            const index = children.indexOf(this);
-            if (index > -1) {
-                children.splice(index, 1);
+            const content = this.parentNode.content;
+            const index = content.indexOf(this.toParent(null));
+            if (!!~index) {
+                content.splice(index, 1);
             }
         }
     },
@@ -187,7 +186,7 @@ ComponentNode.prototype = {
 
 /**
  * @extends ComponentNode
- * @param {string} html
+ * @param {Object|string} html
  * @constructor
  */
 function ComponentSafeNode(html) {
@@ -233,18 +232,18 @@ Object.assign(ComponentTextNode.prototype, {
 
 /**
  * @extends ComponentNode
- * @param list
+ * @param {any} content
  * @constructor
  */
-function ComponentListNode(list) {
+function ComponentListNode(content) {
     ComponentNode.call(this);
     this.content = new ComponentArray();
-    if (isArray(list)) {
-        list.forEach(item => {
+    if (isArray(content)) {
+        content.forEach(item => {
             this.append(item);
         });
     } else {
-        this.append(list);
+        this.append(content);
     }
 }
 
@@ -304,8 +303,8 @@ Object.assign(ComponentListNode.prototype, {
  * @param content
  * @constructor
  */
-function ComponentTagNode(tag, attrs, children) {
-    ComponentListNode.call(this, children);
+function ComponentTagNode(tag, attrs, content) {
+    ComponentListNode.call(this, content);
     this.tag = tag;
     this.attrs = {};
     this.attr(attrs);
@@ -349,9 +348,9 @@ Object.assign(ComponentTagNode.prototype, {
         const tokens = [].slice.call(arguments);
         const classList = this.classList();
         tokens.forEach(token => {
-            if (!token) return true
-            if (classList.indexOf(token) > -1) return true
-            classList.push(token);
+            if (token && !~classList.indexOf(token)) {
+                classList.push(token);
+            }
         });
         this.setAttribute('class', classList.join(' ').trim());
         return this
@@ -359,10 +358,13 @@ Object.assign(ComponentTagNode.prototype, {
     removeClass() {
         const tokens = [].slice.call(arguments);
         const classList = this.classList();
-        tokens.forEach((token, index) => {
-            if (!token) return true
-            if (classList.indexOf(token) < 0) return
-            classList.splice(index, 1);
+        tokens.forEach((token) => {
+            if( token) {
+                const index = classList.indexOf(token);
+                if(!!~index){
+                    classList.splice(index, 1);
+                }
+            }
         });
         this.setAttribute('class', classList.join(' ').trim());
         return this
@@ -375,10 +377,7 @@ Object.assign(ComponentTagNode.prototype, {
         } else {
             this.setAttribute(name, value);
         }
-    },
-    text(content) {
-        this.content = [new ComponentTextNode(content)];
-    },
+    }
 });
 
 
@@ -386,7 +385,7 @@ Object.assign(ComponentTagNode.prototype, {
  * @constructor
  * @param {ComponentParams} props
  * @param {ComponentCallback} render
- * @return {ComponentType}
+ * @return {ComponentType|string}
  */
 function Component(props, render) {
     let node, replace;
@@ -395,7 +394,9 @@ function Component(props, render) {
     } else {
         node = new ComponentListNode(props.content);
     }
-    if (isFunction(render)) replace = render(node, props, this);
+    if (isFunction(render)) {
+        replace = render(node, props, this);
+    }
     return replace ? replace : node
 }
 
@@ -420,7 +421,7 @@ Component.prototype = {
     /**
      *
      * @param {string} name
-     * @param {object} props
+     * @param {object} [props]
      * @param {any[]} [content]
      * @return {ComponentType}
      */
@@ -440,7 +441,7 @@ Component.prototype = {
     pick(params, props, extra) {
         extra = extra || {};
         params = Object.entries(params).filter(([name]) => {
-            return props.indexOf(name) !== -1
+            return !!~props.indexOf(name)
         });
         return Object.assign(Object.fromEntries(params), extra)
     },
@@ -468,12 +469,11 @@ Component.prototype = {
  *
  * @param {string} name
  * @param {ComponentInstance} proto
- * @return {function(props?:{},content?:[]): ComponentType}
+ * @return {function(props?:ComponentParams,content?:any): ComponentType}
  */
 function createComponent(name, proto) {
+    const defaults = proto.props || {};
     const render = proto.render;
-    const defaults = proto.props;
-
     /**
      *
      * @param {Object} [props]
@@ -481,16 +481,13 @@ function createComponent(name, proto) {
      * @return {ComponentType}
      */
     function component(props, content) {
-        const config = merge({}, defaults || {}, props || {});
+        const config = merge({}, defaults , props || {});
         if (content) {
             config.content = content;
         }
-        const instance = new Component(config, render);
-        if (instance) {
-            return instance
-        } else {
-            console.log('component', name, 'empty output');
-        }
+        try{
+            return new Component(config, render)
+        } catch(e){}
     }
 
     components[name] = component;
