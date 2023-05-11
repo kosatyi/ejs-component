@@ -68,7 +68,7 @@ const options = {
         return value
     },
     tagNodeToString(node) {
-        return JSON.stringify(node.toJSON())
+        return JSON.stringify(node)
     },
     isSafeString(node) {
         return isObject(node) &&
