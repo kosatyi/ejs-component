@@ -9,7 +9,7 @@ export default [
             file: pkg.main,
             format: 'umd',
             exports: 'named',
-            name: pkg.name
+            name: pkg.name.replace(/-([a-z])/g,  (m, w) => w.toUpperCase() )
         },
         plugins: [
             commonjs(),
