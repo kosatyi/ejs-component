@@ -22,5 +22,7 @@
     "@kosatyi/is-type": "^0.0.5",
     "@kosatyi/rollup": "^0.0.8"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@jest/globals": "^29.5.0"
+  }
 }
