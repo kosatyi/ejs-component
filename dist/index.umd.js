@@ -70,7 +70,7 @@
 	  if (isAnyObject(o) === false) return false;
 	  return o.constructor === Object && Object.getPrototypeOf(o) === Object.prototype;
 	}
-	function isObject(o) {
+	function isObject$1(o) {
 	  return isPlainObject$1(o);
 	}
 	function isEmptyObject(o) {
@@ -184,7 +184,7 @@
 		isNull: isNull,
 		isNullOrUndefined: isNullOrUndefined,
 		isNumber: isNumber$1,
-		isObject: isObject,
+		isObject: isObject$1,
 		isObjectLike: isObjectLike,
 		isOneOf: isOneOf,
 		isPlainObject: isPlainObject$1,
@@ -335,15 +335,67 @@
 	  isPlainObject,
 	  isString,
 	  isFunction,
+	  isObject,
 	  isArray,
 	  isNumber
 	} = Type;
 	const {
 	  merge
 	} = Schema;
+
 	/**
-	 *
-	 * @type {{}}
+	 * @typedef {ComponentNode|ComponentTagNode|ComponentListNode} ComponentType
+	 */
+
+	/**
+	 * @typedef {Object} ComponentTagNodeParams
+	 * @property {string} tag
+	 * @property {Object} [attrs]
+	 * @property {Array|String} [content]
+	 */
+
+	/**
+	 * @typedef {Object} ComponentListNodeParams
+	 * @property {Array|string} [content]
+	 */
+
+	/**
+	 * @typedef {ComponentTagNodeParams|ComponentListNodeParams} ComponentParams
+	 */
+
+	/**
+	 * @typedef {Object} ComponentTagNodeInstance
+	 * @property {ComponentParams} props
+	 * @property {ComponentCallback} [render]
+	 */
+
+	/**
+	 * @typedef {Object} ComponentListNodeInstance
+	 * @property {ComponentParams} [props]
+	 * @property {ComponentCallback} render
+	 */
+
+	/**
+	 * @typedef {ComponentTagNodeInstance|ComponentListNodeInstance} ComponentInstance
+	 */
+
+	/**
+	 * @typedef {Function} ComponentCallback
+	 * @param {ComponentType} node
+	 * @param {Object} props
+	 * @param {Component} [self]
+	 * @returns ComponentNode | void
+	 */
+
+	/**
+	 * @typedef {Function} ComponentRender
+	 * @param {Object} [props]
+	 * @param {any} [content]
+	 * @returns {ComponentType}
+	 */
+
+	/**
+	 * @type {Object.<string, ComponentRender>}
 	 */
 	const components = {};
 	/**
@@ -352,19 +404,25 @@
 	 */
 	const options = {
 	  componentCreated(name, component) {},
+	  escapeValue(value) {
+	    return value;
+	  },
 	  tagNodeToString(node) {
 	    return JSON.stringify(node.toJSON());
 	  },
 	  isSafeString(node) {
-	    return node && isFunction(node.toString);
+	    return isObject(node) && isNumber(node.length) && isString(node.value) && isFunction(node.toString);
 	  }
 	};
 
 	/**
 	 *
-	 * @param params
+	 * @param {{}} params
 	 */
 	function configureComponent(params = {}) {
+	  if (isFunction(params.escapeValue)) {
+	    options.escapeValue = params.escapeValue;
+	  }
 	  if (isFunction(params.componentCreated)) {
 	    options.componentCreated = params.componentCreated;
 	  }
@@ -392,6 +450,9 @@
 	  isSafeString(node) {
 	    return options.isSafeString(node);
 	  },
+	  hasChildNodes(node) {
+	    return node instanceof ComponentTagNode || node instanceof ComponentListNode;
+	  },
 	  getNode(node) {
 	    if (node instanceof ComponentNode) {
 	      return node;
@@ -409,18 +470,18 @@
 	    }
 	  },
 	  prependTo(node) {
-	    if (node instanceof ComponentTagNode) {
+	    if (this.hasChildNodes(node)) {
 	      node.prepend(this);
 	    }
 	  },
 	  appendTo(node) {
-	    if (node instanceof ComponentTagNode) {
+	    if (this.hasChildNodes(node)) {
 	      node.append(this);
 	    }
 	    return this;
 	  },
 	  remove() {
-	    if (this.parentNode instanceof ComponentTagNode) {
+	    if (this.hasChildNodes(this.parentNode)) {
 	      const children = this.parentNode.children;
 	      const index = children.indexOf(this);
 	      if (index > -1) {
@@ -458,7 +519,7 @@
 	 */
 	function ComponentTextNode(text) {
 	  ComponentNode.call(this);
-	  this.text = text;
+	  this.text = options.escapeValue(text);
 	}
 	Object.setPrototypeOf(ComponentTextNode.prototype, ComponentNode.prototype);
 	Object.assign(ComponentTextNode.prototype, {
@@ -685,34 +746,11 @@
 	});
 
 	/**
-	 * @typedef {function} ComponentCallback
-	 * @param {ComponentTagNode} node
-	 * @param {object} props
-	 * @param {Component} [self]
-	 * @returns ComponentNode | void
-	 */
-
-	/**
-	 * @typedef {object} ComponentParams
-	 * @property {string} [tag]
-	 * @property {object} [attrs]
-	 * @property {Array|string} [content]
-	 */
-
-	/**
-	 * @typedef {object} ComponentInstance
-	 * @property {ComponentParams} [props]
-	 * @property {ComponentCallback} [render]
-	 */
-
-	/**
-	 *
+	 * @constructor
 	 * @param {ComponentParams} props
 	 * @param {ComponentCallback} render
-	 * @return {ComponentNode}
-	 * @constructor
+	 * @return {ComponentType}
 	 */
-
 	function Component(props, render) {
 	  let node, replace;
 	  if (isString(props.tag)) {
@@ -727,12 +765,18 @@
 	  /**
 	   *
 	   * @param {string} tag
-	   * @param {object} [attrs]
-	   * @param {*} [children]
+	   * @param {Object} attrs
+	   * @param [children]
 	   * @returns {ComponentTagNode}
 	   */
-	  create(tag, attrs, children) {
+	  node(tag, attrs, children) {
 	    return new ComponentTagNode(tag, attrs, children);
+	  },
+	  /**
+	   * @deprecated use `node` instead
+	   */
+	  create(tag, atts, children) {
+	    return this.node(tag, attrs, children);
 	  },
 	  /**
 	   * @param {any[]} [children]
@@ -746,7 +790,7 @@
 	   * @param {string} name
 	   * @param {object} props
 	   * @param {any[]} [content]
-	   * @return {ComponentNode|ComponentTagNode}
+	   * @return {ComponentType}
 	   */
 	  call(name, props, content) {
 	    const instance = components[name];
@@ -756,9 +800,9 @@
 	  },
 	  /**
 	   *
-	   * @param params
-	   * @param props
-	   * @param extra
+	   * @param {object} params
+	   * @param {array<string|number>} props
+	   * @param {object} [extra]
 	   * @returns {{[p: string]: any}}
 	   */
 	  pick(params, props, extra) {
@@ -767,24 +811,53 @@
 	      return props.indexOf(name) !== -1;
 	    });
 	    return Object.assign(Object.fromEntries(params), extra);
+	  },
+	  /**
+	   *
+	   * @param array
+	   * @param delimiter
+	   * @returns {string}
+	   */
+	  join(array, delimiter) {
+	    return [].slice.call(array).join(delimiter).trim();
+	  },
+	  /**
+	   *
+	   * @param object
+	   * @param prop
+	   * @returns {boolean}
+	   */
+	  hasProp(object, prop) {
+	    return Object.prototype.hasOwnProperty.call(object, prop);
 	  }
 	};
 
 	/**
 	 *
 	 * @param {string} name
-	 * @param {ComponentInstance} instance
-	 * @return {function(params:{},content:[]): Component}
+	 * @param {ComponentInstance} proto
+	 * @return {function(props?:{},content?:[]): ComponentType}
 	 */
-	function createComponent(name, instance) {
-	  const render = instance.render;
-	  const defaults = instance.props;
+	function createComponent(name, proto) {
+	  const render = proto.render;
+	  const defaults = proto.props;
+	  /**
+	   *
+	   * @param {Object} [props]
+	   * @param {any} [content]
+	   * @return {ComponentType}
+	   */
 	  function component(props, content) {
 	    const config = merge({}, defaults || {}, props || {});
 	    if (content) {
 	      config.content = content;
 	    }
-	    return new Component(config, render);
+	    const instance = new Component(config, render);
+	    if (instance) {
+	      return instance;
+	    } else {
+	      console.log('component', name, 'empty output');
+	    }
 	  }
 	  components[name] = component;
 	  options.componentCreated(name, component);
@@ -793,20 +866,32 @@
 
 	/**
 	 *
-	 * @param name
-	 * @returns {*}
+	 * @param {string} name
+	 * @returns {ComponentRender}
 	 */
 	function getComponent(name) {
 	  return components[name];
 	}
+	var options_1 = src$1.options = options;
+	var ComponentNode_1 = src$1.ComponentNode = ComponentNode;
+	var ComponentSafeNode_1 = src$1.ComponentSafeNode = ComponentSafeNode;
+	var ComponentTextNode_1 = src$1.ComponentTextNode = ComponentTextNode;
+	var ComponentTagNode_1 = src$1.ComponentTagNode = ComponentTagNode;
+	var ComponentListNode_1 = src$1.ComponentListNode = ComponentListNode;
 	var getComponent_1 = src$1.getComponent = getComponent;
 	var configureComponent_1 = src$1.configureComponent = configureComponent;
 	var createComponent_1 = src$1.createComponent = createComponent;
 
+	exports.ComponentListNode = ComponentListNode_1;
+	exports.ComponentNode = ComponentNode_1;
+	exports.ComponentSafeNode = ComponentSafeNode_1;
+	exports.ComponentTagNode = ComponentTagNode_1;
+	exports.ComponentTextNode = ComponentTextNode_1;
 	exports.configureComponent = configureComponent_1;
 	exports.createComponent = createComponent_1;
 	exports.default = src$1;
 	exports.getComponent = getComponent_1;
+	exports.options = options_1;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 
