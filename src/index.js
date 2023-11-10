@@ -359,9 +359,9 @@ Object.assign(ComponentTagNode.prototype, {
         const tokens = [].slice.call(arguments)
         const classList = this.classList()
         tokens.forEach((token) => {
-            if( token) {
+            if (token) {
                 const index = classList.indexOf(token)
-                if(!!~index){
+                if (!!~index) {
                     classList.splice(index, 1)
                 }
             }
@@ -399,6 +399,32 @@ function Component(props, render) {
     }
     return replace ? replace : node
 }
+
+/**
+ * @template {Object<string,any>} T
+ * @param {T} object
+ * @param {object} [options]
+ */
+Component.extend = function (object, options = {}) {
+    /**
+     * @template T
+     * @type {T & Component.prototype}
+     */
+    Object.entries(object).forEach(([name, value]) => {
+        Component.defineProperty(name, value, options)
+    })
+    return Component
+}
+
+Component.defineProperty = function (name, value, {writable, configurable, enumerable}) {
+    return Object.defineProperty(Component.prototype, name, {
+        value,
+        writable,
+        configurable,
+        enumerable
+    })
+}
+
 
 Component.prototype = {
     /**
@@ -474,6 +500,7 @@ Component.prototype = {
 function createComponent(name, proto) {
     const defaults = proto.props || {}
     const render = proto.render
+
     /**
      *
      * @param {Object} [props]
@@ -481,13 +508,14 @@ function createComponent(name, proto) {
      * @return {ComponentType}
      */
     function component(props, content) {
-        const config = merge({}, defaults , props || {})
+        const config = merge({}, defaults, props || {})
         if (content) {
             config.content = content
         }
-        try{
+        try {
             return new Component(config, render)
-        } catch(e){}
+        } catch (e) {
+        }
     }
 
     components[name] = component
@@ -505,6 +533,7 @@ function getComponent(name) {
 }
 
 exports.options = options
+exports.Component = Component
 exports.ComponentNode = ComponentNode
 exports.ComponentSafeNode = ComponentSafeNode
 exports.ComponentTextNode = ComponentTextNode

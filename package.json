@@ -20,11 +20,11 @@
   "author": "Stepan Kosatyi",
   "license": "MIT",
   "dependencies": {
-    "@kosatyi/is-type": "^0.0.5",
-    "@kosatyi/rollup": "^0.0.8"
+    "@kosatyi/is-type": "^0.0.5"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",
+    "@kosatyi/rollup": "^0.0.8",
     "jest": "^29.5.0"
   }
 }

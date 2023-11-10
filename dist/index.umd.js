@@ -720,6 +720,34 @@
 	  }
 	  return replace ? replace : node;
 	}
+
+	/**
+	 * @template {Object<string,any>} T
+	 * @param {T} object
+	 * @param {object} [options]
+	 */
+	Component.extend = function (object, options = {}) {
+	  /**
+	   * @template T
+	   * @type {T & Component.prototype}
+	   */
+	  Object.entries(object).forEach(([name, value]) => {
+	    Component.defineProperty(name, value, options);
+	  });
+	  return Component;
+	};
+	Component.defineProperty = function (name, value, {
+	  writable,
+	  configurable,
+	  enumerable
+	}) {
+	  return Object.defineProperty(Component.prototype, name, {
+	    value,
+	    writable,
+	    configurable,
+	    enumerable
+	  });
+	};
 	Component.prototype = {
 	  /**
 	   *
@@ -794,6 +822,7 @@
 	function createComponent(name, proto) {
 	  const defaults = proto.props || {};
 	  const render = proto.render;
+
 	  /**
 	   *
 	   * @param {Object} [props]
@@ -823,6 +852,7 @@
 	  return components[name];
 	}
 	var options_1 = src$1.options = options;
+	var Component_1 = src$1.Component = Component;
 	var ComponentNode_1 = src$1.ComponentNode = ComponentNode;
 	var ComponentSafeNode_1 = src$1.ComponentSafeNode = ComponentSafeNode;
 	var ComponentTextNode_1 = src$1.ComponentTextNode = ComponentTextNode;
@@ -833,6 +863,7 @@
 	var configureComponent_1 = src$1.configureComponent = configureComponent;
 	var createComponent_1 = src$1.createComponent = createComponent;
 
+	exports.Component = Component_1;
 	exports.ComponentArray = ComponentArray_1;
 	exports.ComponentListNode = ComponentListNode_1;
 	exports.ComponentNode = ComponentNode_1;
