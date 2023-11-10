@@ -4,6 +4,7 @@ const {
     createComponent,
     configureComponent,
     getComponent,
+    Component,
     ComponentArray,
     ComponentNode,
     ComponentTextNode,
@@ -11,6 +12,19 @@ const {
     ComponentSafeNode,
     ComponentListNode
 } = require('../src');
+
+describe('Component.extend', () => {
+    Component.extend({
+        myMethod(){
+            return 'value'
+        }
+    })
+    test('myMethod', () => {
+        new Component({},function(node,props,self){
+            expect(self.myMethod()).toBe('value')
+        })
+    })
+})
 
 describe('ComponentNode', () => {
     const node = new ComponentNode()
