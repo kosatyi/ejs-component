@@ -348,14 +348,14 @@
 	 */
 
 	/**
-	 * @typedef {Object} ComponentTagNodeParams
-	 * @property {string} tag
+	 * @typedef {Object<string,any>} ComponentTagNodeParams
+	 * @property {string} [tag]
 	 * @property {Object} [attrs]
 	 * @property {Array|String} [content]
 	 */
 
 	/**
-	 * @typedef {Object} ComponentListNodeParams
+	 * @typedef {Object<string,any>} ComponentListNodeParams
 	 * @property {Array|string} [content]
 	 */
 
