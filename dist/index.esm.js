@@ -467,11 +467,21 @@ Component.prototype = {
      * @returns {{[p: string]: any}}
      */
     pick(params, props, extra) {
-        extra = extra || {};
-        params = Object.entries(params).filter(([name]) => {
-            return !!~props.indexOf(name)
-        });
-        return Object.assign(Object.fromEntries(params), extra)
+        return Object.assign(Object.fromEntries(
+            Object.entries(params).filter(([name]) => !!~props.indexOf(name) )
+        ), extra || {})
+    },
+    /**
+     *
+     * @param {object} params
+     * @param {array<string|number>} props
+     * @param {object} [extra]
+     * @returns {{[p: string]: any}}
+     */
+    omit(params,props,extra){
+        return Object.assign(Object.fromEntries(
+            Object.entries(params).filter(([name]) => !~props.indexOf(name) )
+        ), extra || {})
     },
     /**
      *
