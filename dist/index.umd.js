@@ -787,7 +787,7 @@
 	   * @returns {{[p: string]: any}}
 	   */
 	  pick(params, props, extra) {
-	    return Object.assign(Object.fromEntries(Object.entries(params).filter(([name]) => !!~props.indexOf(name))), extra || {});
+	    return Object.assign(Object.fromEntries(Object.entries(this.clean(params)).filter(([name]) => !!~props.indexOf(name))), this.clean(extra));
 	  },
 	  /**
 	   *
@@ -797,7 +797,7 @@
 	   * @returns {{[p: string]: any}}
 	   */
 	  omit(params, props, extra) {
-	    return Object.assign(Object.fromEntries(Object.entries(params).filter(([name]) => !~props.indexOf(name))), extra || {});
+	    return Object.assign(Object.fromEntries(Object.entries(this.clean(params)).filter(([name]) => !~props.indexOf(name))), this.clean(extra));
 	  },
 	  /**
 	   *
@@ -806,7 +806,7 @@
 	   */
 	  clean(params) {
 	    if (!params) return {};
-	    return Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== '' && v !== undefined));
+	    return Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined));
 	  },
 	  /**
 	   *

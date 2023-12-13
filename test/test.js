@@ -184,6 +184,7 @@ describe('createComponent', () => {
             self.call('list')
             self.list()
             self.pick(props,['tag','attrs'])
+            self.omit(props,['name'])
             self.join([1,2,3],'-')
             self.hasProp(props,'tag')
         }

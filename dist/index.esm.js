@@ -468,8 +468,8 @@ Component.prototype = {
      */
     pick(params, props, extra) {
         return Object.assign(Object.fromEntries(
-            Object.entries(params).filter(([name]) => !!~props.indexOf(name) )
-        ), extra || {})
+            Object.entries(this.clean(params)).filter(([name]) => !!~props.indexOf(name) )
+        ), this.clean(extra))
     },
     /**
      *
@@ -480,8 +480,8 @@ Component.prototype = {
      */
     omit(params,props,extra){
         return Object.assign(Object.fromEntries(
-            Object.entries(params).filter(([name]) => !~props.indexOf(name) )
-        ), extra || {})
+            Object.entries(this.clean(params)).filter(([name]) => !~props.indexOf(name) )
+        ), this.clean(extra))
     },
     /**
      *
@@ -491,7 +491,7 @@ Component.prototype = {
     clean(params){
         if(!params) return {}
         return Object.fromEntries(
-            Object.entries(params).filter(([_, v]) => v !== '' && v !== undefined)
+            Object.entries(params).filter(([_, v]) => v !== undefined)
         )
     },
     /**
