@@ -842,7 +842,9 @@
 	    }
 	    try {
 	      return new Component(config, render);
-	    } catch (e) {}
+	    } catch (e) {
+	      console.log(e);
+	    }
 	  }
 	  components[name] = component;
 	  options.componentCreated(name, component);

@@ -467,9 +467,10 @@ Component.prototype = {
      * @returns {{[p: string]: any}}
      */
     pick(params, props, extra) {
+        extra = extra || {}
         return Object.assign(Object.fromEntries(
             Object.entries(params).filter(([name]) => !!~props.indexOf(name) )
-        ), extra || {})
+        ), extra)
     },
     /**
      *
@@ -482,6 +483,16 @@ Component.prototype = {
         return Object.assign(Object.fromEntries(
             Object.entries(params).filter(([name]) => !~props.indexOf(name) )
         ), extra || {})
+    },
+    /**
+     *
+     * @param {object} params
+     * @returns {{[p: string]: any}}
+     */
+    clean(params){
+        return Object.fromEntries(
+            Object.entries(params || {}).filter(([_, v]) => v !== '' && v !== undefined)
+        )
     },
     /**
      *
@@ -527,6 +538,7 @@ function createComponent(name, proto) {
         try {
             return new Component(config, render)
         } catch (e) {
+            console.log(e)
         }
     }
 

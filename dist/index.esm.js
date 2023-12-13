@@ -482,6 +482,7 @@ Component.prototype = {
         return Object.assign(Object.fromEntries(
             Object.entries(params).filter(([name]) => !~props.indexOf(name) )
         ), extra || {})
+        
     },
     /**
      *
@@ -527,6 +528,7 @@ function createComponent(name, proto) {
         try {
             return new Component(config, render)
         } catch (e) {
+            console.log(e);
         }
     }
 
