@@ -801,6 +801,15 @@
 	  },
 	  /**
 	   *
+	   * @param {object} params
+	   * @returns {{[p: string]: any}}
+	   */
+	  clean(params) {
+	    if (!params) return {};
+	    return Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== '' && v !== undefined));
+	  },
+	  /**
+	   *
 	   * @param array
 	   * @param delimiter
 	   * @returns {string}
