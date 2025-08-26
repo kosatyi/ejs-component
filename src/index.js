@@ -214,7 +214,7 @@ Object.assign(ComponentSafeNode.prototype, {
  */
 function ComponentTextNode(text) {
     ComponentNode.call(this)
-    this.text = options.escapeValue(text)
+    this.text = String(options.escapeValue(text))
 }
 
 Object.setPrototypeOf(ComponentTextNode.prototype, ComponentNode.prototype)
