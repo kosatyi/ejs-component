@@ -196,18 +196,11 @@ describe('createComponent', () => {
             throw Error('failed')
         }
     })
-
-
-
     test('createComponent', () => {
-
         tagComponent({},['content'])
         listComponent()
         errorComponent()
-        replaceComponent({
-
-        })
-
+        replaceComponent({})
     })
 })
 
