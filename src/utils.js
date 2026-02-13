@@ -1,0 +1,35 @@
+export const isString = (v) => typeof v === 'string'
+
+export const isNumber = (v) => typeof v === 'number'
+
+export const isBoolean = (v) => typeof v === 'boolean'
+
+export const isFunction = (v) => typeof v === 'function'
+
+export const isArray = (v) => Array.isArray(v)
+
+export const isPlainObject = (o) => {
+    if (typeof o !== 'object' || o === null) return false
+    let proto = o
+    while (Object.getPrototypeOf(proto) !== null) {
+        proto = Object.getPrototypeOf(proto)
+    }
+    return Object.getPrototypeOf(o) === proto
+}
+
+export const merge = (target, ...list) => {
+    for (const index of Object.keys(list)) {
+        const source = list[index]
+        for (const key of Object.keys(source)) {
+            const value = source[key]
+            if (isPlainObject(value)) {
+                target[key] = merge(target[key] || {}, value)
+            } else if (isArray(value)) {
+                target[key] = merge(target[key] || [], value)
+            } else {
+                target[key] = value
+            }
+        }
+    }
+    return target
+}

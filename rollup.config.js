@@ -1,32 +1,31 @@
-import {babel, resolve, commonjs} from '@kosatyi/rollup'
+import resolve from '@rollup/plugin-node-resolve'
+import commonjs from '@rollup/plugin-commonjs'
 
-import pkg from './package.json'
+import pkg from './package.json' with {type: 'json'}
 
-export default [
-    {
-        input: 'src/index.js',
-        output: {
+const pkgName = pkg.name.replace(/-([a-z])/g, (m, w) => w.toUpperCase())
+
+export default {
+    input: 'src/index.js',
+    output: [
+        {
             file: pkg.main,
-            format: 'umd',
-            exports: 'named',
-            name: pkg.name.replace(/-([a-z])/g,  (m, w) => w.toUpperCase() )
+            format: 'cjs'
         },
-        plugins: [
-            commonjs(),
-            resolve({
-                browser: true
-            }),
-            babel({
-                babelHelpers: 'bundled'
-            }),
-        ]
-    },
-    {
-        input: 'src/index.js',
-        output: {
+        {
             file: pkg.module,
             format: 'esm'
         },
-        external: ['@kosatyi/is-type'],
-    }
-]
+        {
+            file: pkg.browser,
+            format: 'umd',
+            exports: 'named',
+            name: pkgName
+        }
+    ],
+    plugins: [
+        commonjs(),
+        resolve()
+    ]
+}
+

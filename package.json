@@ -1,30 +1,38 @@
 {
-  "name": "ejs-component",
-  "version": "0.0.23",
-  "description": "html object component",
-  "main": "dist/index.umd.js",
-  "module": "dist/index.esm.js",
-  "files": [
-    "dist/index.umd.js",
-    "dist/index.esm.js"
-  ],
-  "scripts": {
-    "test": "jest --collect-coverage",
-    "jest": "jest --watch --collect-coverage",
-    "start": "rollup -c -w --bundleConfigAsCjs",
-    "build": "rollup -c --bundleConfigAsCjs",
-    "preversion": "npm test",
-    "version": "npm run build && git add -A dist",
-    "postversion": "git push && git push --tags"
-  },
-  "author": "Stepan Kosatyi",
-  "license": "MIT",
-  "dependencies": {
-    "@kosatyi/is-type": "^0.0.5"
-  },
-  "devDependencies": {
-    "@jest/globals": "^30.2.0",
-    "@kosatyi/rollup": "^0.0.8",
-    "jest": "^30.2.0"
-  }
+    "name": "ejs-component",
+    "version": "0.0.23",
+    "author": "Stepan Kosatyi",
+    "license": "MIT",
+    "type": "module",
+    "description": "html object component",
+    "main": "dist/index.cjs.js",
+    "browser": "dist/index.umd.js",
+    "module": "dist/index.esm.js",
+    "files": [
+        "dist/index.umd.js",
+        "dist/index.cjs.js",
+        "dist/index.esm.js"
+    ],
+    "scripts": {
+        "test": "vitest --coverage",
+        "bench": "vitest bench",
+        "start": "rollup -c -w",
+        "build": "rollup -c",
+        "preversion": "npm test",
+        "version": "npm run build && git add -A dist",
+        "postversion": "git push && git push --tags"
+    },
+    "exports": {
+        ".": {
+            "import": "./dist/index.esm.js",
+            "require": "./dist/index.cjs.js"
+        }
+    },
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^29.0.0",
+        "@rollup/plugin-node-resolve": "^16.0.3",
+        "@vitest/coverage-v8": "^3.2.4",
+        "rollup": "^3.29.5",
+        "vitest": "^3.2.4"
+    }
 }

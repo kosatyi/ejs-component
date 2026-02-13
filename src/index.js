@@ -1,23 +1,37 @@
-const {Type, Schema} = require('@kosatyi/is-type')
-const {isPlainObject, isString, isFunction, isObject, isArray, isNumber} = Type
-const {merge} = Schema
+import {
+    isString,
+    isFunction,
+    isPlainObject,
+    isNumber,
+    isArray,
+    merge,
+    isBoolean
+} from './utils.js'
+
+/**
+ * @typedef {object} ComponentConfig
+ * @property {(e:Error)=>any} [logErrors]
+ * @property {(name:string,component: ComponentRender)=>void} [componentCreated]
+ * @property {(value:any)=>string} [escapeValue]
+ * @property {(node: ComponentType)=>boolean} [isSafeString]
+ * @property {(node: ComponentType)=>string} [tagNodeToString]
+ */
 
 /**
  * @typedef {ComponentNode|ComponentTagNode|ComponentListNode} ComponentType
  */
 
 /**
- * @typedef {Object<string,any>} ComponentTagNodeParams
+ * @typedef {Record<string,any>} ComponentTagNodeParams
  * @property {string} [tag]
  * @property {Object} [attrs]
  * @property {Array|String} [content]
  */
 
 /**
- * @typedef {Object<string,any>} ComponentListNodeParams
+ * @typedef {Record<string,any>} ComponentListNodeParams
  * @property {Array|string} [content]
  */
-
 
 /**
  * @typedef {ComponentTagNodeParams|ComponentListNodeParams} ComponentParams
@@ -55,35 +69,30 @@ const {merge} = Schema
  */
 
 /**
- * @type {Object.<string, ComponentRender>}
- */
-const components = {}
-/**
  *
- * @type {object}
+ * @type {ComponentConfig}
  */
 const options = {
-    componentCreated(name, component) {
+    logErrors(e) {},
+    componentCreated(name, component) {},
+    isSafeString() {
+        return false
     },
     escapeValue(value) {
         return value
     },
     tagNodeToString(node) {
         return JSON.stringify(node)
-    },
-    isSafeString(node) {
-        return isObject(node) &&
-            isNumber(node.length) &&
-            isString(node.value) &&
-            isFunction(node.toString)
-    },
+    }
 }
-
 /**
  *
- * @param {{}} params
+ * @param {Partial<ComponentConfig>} params
  */
-function configureComponent(params = {}) {
+export const configureComponent = (params = {}) => {
+    if (isFunction(params.logErrors)) {
+        options.logErrors = params.logErrors
+    }
     if (isFunction(params.escapeValue)) {
         options.escapeValue = params.escapeValue
     }
@@ -102,8 +111,8 @@ function configureComponent(params = {}) {
  * @mixes Array
  * @constructor
  */
-function ComponentArray(list) {
-    [].push.apply(this, list)
+export function ComponentArray(list) {
+    ;[].push.apply(this, list)
 }
 
 Object.setPrototypeOf(ComponentArray.prototype, Array.prototype)
@@ -119,8 +128,7 @@ ComponentArray.prototype.toJSON = function () {
  *
  * @constructor
  */
-function ComponentNode() {
-}
+export function ComponentNode() {}
 
 ComponentNode.prototype = {
     parentNode: null,
@@ -128,30 +136,36 @@ ComponentNode.prototype = {
         if (parent instanceof ComponentNode) {
             this.parentNode = parent
         }
+        if (parent === null) {
+            this.parentNode = null
+        }
         return this
     },
     isSafeString(node) {
         return options.isSafeString(node)
     },
     hasChildNodes(node) {
-        return node instanceof ComponentTagNode || node instanceof ComponentListNode
+        return (
+            node instanceof ComponentTagNode ||
+            node instanceof ComponentListNode
+        )
     },
-    getNode(node) {
-        if (node instanceof ComponentNode) {
-            return node
+    getNode(value) {
+        if (value instanceof ComponentNode) {
+            return value
         }
-        if (this.isSafeString(node)) {
-            return new ComponentSafeNode(node)
+        if (this.isSafeString(value)) {
+            return new ComponentSafeNode(value)
         }
-        if (isString(node) || isNumber(node)) {
-            return new ComponentTextNode(node)
+        if (isString(value) || isNumber(value)) {
+            return new ComponentTextNode(value)
         }
-        if (isPlainObject(node)) {
-            if (isString(node.tag) && isPlainObject(node.attrs)) {
+        if (isPlainObject(value)) {
+            if (isString(value.tag) && isPlainObject(value.attrs)) {
                 return new ComponentTagNode(
-                    node.tag,
-                    node.attrs,
-                    node.content || []
+                    value.tag,
+                    value.attrs,
+                    value.content || []
                 )
             }
         }
@@ -189,7 +203,7 @@ ComponentNode.prototype = {
  * @param {Object|string} html
  * @constructor
  */
-function ComponentSafeNode(html) {
+export function ComponentSafeNode(html) {
     ComponentNode.call(this)
     this.html = String(html)
 }
@@ -212,7 +226,7 @@ Object.assign(ComponentSafeNode.prototype, {
  * @param text
  * @constructor
  */
-function ComponentTextNode(text) {
+export function ComponentTextNode(text) {
     ComponentNode.call(this)
     this.text = String(options.escapeValue(text))
 }
@@ -235,11 +249,11 @@ Object.assign(ComponentTextNode.prototype, {
  * @param {any} content
  * @constructor
  */
-function ComponentListNode(content) {
+export function ComponentListNode(content) {
     ComponentNode.call(this)
     this.content = new ComponentArray()
     if (isArray(content)) {
-        content.forEach(item => {
+        content.forEach((item) => {
             this.append(item)
         })
     } else {
@@ -257,7 +271,7 @@ Object.setPrototypeOf(ComponentListNode.prototype, ComponentNode.prototype)
 Object.assign(ComponentListNode.prototype, {
     toJSON() {
         return {
-            content: this.content
+            content: this.content.map((i) => i.toJSON())
         }
     },
     toString() {
@@ -288,12 +302,12 @@ Object.assign(ComponentListNode.prototype, {
         return this
     },
     empty() {
-        this.content.forEach(item => {
+        this.content.forEach((item) => {
             item.toParent(null)
         })
         this.content = []
         return this
-    },
+    }
 })
 
 /**
@@ -303,7 +317,7 @@ Object.assign(ComponentListNode.prototype, {
  * @param content
  * @constructor
  */
-function ComponentTagNode(tag, attrs, content) {
+export function ComponentTagNode(tag, attrs, content) {
     ComponentListNode.call(this, content)
     this.tag = tag
     this.attrs = {}
@@ -333,7 +347,7 @@ Object.assign(ComponentTagNode.prototype, {
         return {
             tag: this.tag,
             attrs: this.attrs,
-            content: this.content
+            content: this.content.map((i) => i.toJSON())
         }
     },
     toString() {
@@ -347,7 +361,7 @@ Object.assign(ComponentTagNode.prototype, {
     addClass() {
         const tokens = [].slice.call(arguments)
         const classList = this.classList()
-        tokens.forEach(token => {
+        tokens.forEach((token) => {
             if (token && !~classList.indexOf(token)) {
                 classList.push(token)
             }
@@ -380,14 +394,12 @@ Object.assign(ComponentTagNode.prototype, {
     }
 })
 
-
 /**
- * @constructor
  * @param {ComponentParams} props
  * @param {ComponentCallback} render
  * @return {ComponentType|string}
  */
-function Component(props, render) {
+export function Component(props, render) {
     let node, replace
     if (isString(props.tag)) {
         node = new ComponentTagNode(props.tag, props.attrs, props.content)
@@ -395,38 +407,10 @@ function Component(props, render) {
         node = new ComponentListNode(props.content)
     }
     if (isFunction(render)) {
-        replace = render(node, props, this)
+        replace = render(node, props, Component.prototype)
     }
     return replace ? replace : node
 }
-
-/**
- * @template {Object<string,any>} T
- * @param {T} object
- * @param {object} [options]
- */
-Component.extend = function (object, options = {}) {
-    /**
-     * @template T
-     * @type {T & Component.prototype}
-     */
-    Object.entries(object).forEach(([name, value]) => {
-        Component.defineProperty(name, value, options)
-    })
-    return Component
-}
-
-Component.defineProperty = function (name, value, {writable, configurable, enumerable}) {
-    return Object.defineProperty(Component.prototype, name, {
-        value,
-        writable,
-        configurable,
-        enumerable
-    })
-}
-
-
-
 
 Component.prototype = {
     /**
@@ -448,13 +432,21 @@ Component.prototype = {
     },
     /**
      *
+     * @param {string} value
+     * @return {ComponentSafeNode}
+     */
+    safe(value) {
+        return new ComponentSafeNode(value)
+    },
+    /**
+     *
      * @param {string} name
      * @param {object} [props]
      * @param {any[]} [content]
      * @return {ComponentType}
      */
     call(name, props, content) {
-        const instance = components[name]
+        const instance = components.get(name)
         if (instance) {
             return instance(props || {}, content)
         }
@@ -467,9 +459,14 @@ Component.prototype = {
      * @returns {{[p: string]: any}}
      */
     pick(params, props, extra) {
-        return Object.assign(Object.fromEntries(
-            Object.entries(this.clean(params)).filter(([name]) => !!~props.indexOf(name) )
-        ), this.clean(extra))
+        return Object.assign(
+            Object.fromEntries(
+                Object.entries(this.clean(params)).filter(
+                    ([name]) => !!~props.indexOf(name)
+                )
+            ),
+            this.clean(extra)
+        )
     },
     /**
      *
@@ -478,18 +475,23 @@ Component.prototype = {
      * @param {object} [extra]
      * @returns {{[p: string]: any}}
      */
-    omit(params,props,extra){
-        return Object.assign(Object.fromEntries(
-            Object.entries(this.clean(params)).filter(([name]) => !~props.indexOf(name) )
-        ), this.clean(extra))
+    omit(params, props, extra) {
+        return Object.assign(
+            Object.fromEntries(
+                Object.entries(this.clean(params)).filter(
+                    ([name]) => !~props.indexOf(name)
+                )
+            ),
+            this.clean(extra)
+        )
     },
     /**
      *
      * @param {object} params
      * @returns {{[p: string]: any}}
      */
-    clean(params){
-        if(!params) return {}
+    clean(params) {
+        if (!params) return {}
         return Object.fromEntries(
             Object.entries(params).filter(([_, v]) => v !== undefined)
         )
@@ -511,8 +513,46 @@ Component.prototype = {
      */
     hasProp(object, prop) {
         return Object.prototype.hasOwnProperty.call(object, prop)
-    },
+    }
 }
+
+/**
+ * @template {Object<string,any>} T
+ * @param {T} object
+ * @param {object} [options]
+ */
+Component.extend = (object, options = {}) => {
+    /**
+     * @template T
+     * @type {T & Component.prototype}
+     */
+    Object.entries(object).forEach(([name, value]) => {
+        Component.defineProperty(name, value, options)
+    })
+    return Component
+}
+
+Component.defineProperty = (
+    name,
+    value,
+    { writable, configurable, enumerable }
+) => {
+    /**
+     * @template T
+     * @type {T & Component.prototype}
+     */
+    return Object.defineProperty(Component.prototype, name, {
+        value,
+        writable,
+        configurable,
+        enumerable
+    })
+}
+
+/**
+ * @type {Map<string, ComponentRender>}
+ */
+const components = new Map()
 
 /**
  *
@@ -520,31 +560,33 @@ Component.prototype = {
  * @param {ComponentInstance} proto
  * @return {function(props?:ComponentParams,content?:any): ComponentType}
  */
-function createComponent(name, proto) {
+export const createComponent = (name, proto) => {
     const defaults = proto.props || {}
     const render = proto.render
-
     /**
      *
      * @param {Object} [props]
      * @param {any} [content]
      * @return {ComponentType}
      */
-    function component(props, content) {
+    const component = (props, content) => {
         const config = merge({}, defaults, props || {})
         if (content) {
             config.content = content
         }
         try {
-            return new Component(config, render)
+            return Component(config, render)
         } catch (e) {
-            console.log(e)
+            options.logErrors(e)
         }
     }
-
-    components[name] = component
+    components.set(name, component)
     options.componentCreated(name, component)
     return component
+}
+
+export const removeComponent = (name) => {
+    components.delete(name)
 }
 
 /**
@@ -552,18 +594,6 @@ function createComponent(name, proto) {
  * @param {string} name
  * @returns {ComponentRender}
  */
-function getComponent(name) {
-    return components[name]
+export const getComponent = (name) => {
+    return components.get(name)
 }
-
-exports.options = options
-exports.Component = Component
-exports.ComponentNode = ComponentNode
-exports.ComponentSafeNode = ComponentSafeNode
-exports.ComponentTextNode = ComponentTextNode
-exports.ComponentTagNode = ComponentTagNode
-exports.ComponentListNode = ComponentListNode
-exports.ComponentArray = ComponentArray
-exports.getComponent = getComponent
-exports.configureComponent = configureComponent
-exports.createComponent = createComponent
