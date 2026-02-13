@@ -4,8 +4,7 @@ import {
     isPlainObject,
     isNumber,
     isArray,
-    merge,
-    isBoolean
+    merge
 } from './utils.js'
 
 /**
@@ -107,31 +106,8 @@ export const configureComponent = (params = {}) => {
     }
 }
 
-/**
- * @mixes Array
- * @constructor
- */
-export function ComponentArray(list) {
-    ;[].push.apply(this, list)
-}
-
-Object.setPrototypeOf(ComponentArray.prototype, Array.prototype)
-
-ComponentArray.prototype.toString = function () {
-    return [].slice.call(this).join('')
-}
-ComponentArray.prototype.toJSON = function () {
-    return [].slice.call(this)
-}
-
-/**
- *
- * @constructor
- */
-export function ComponentNode() {}
-
-ComponentNode.prototype = {
-    parentNode: null,
+export class ComponentNode {
+    parentNode = null
     toParent(parent) {
         if (parent instanceof ComponentNode) {
             this.parentNode = parent
@@ -140,16 +116,13 @@ ComponentNode.prototype = {
             this.parentNode = null
         }
         return this
-    },
+    }
     isSafeString(node) {
         return options.isSafeString(node)
-    },
+    }
     hasChildNodes(node) {
-        return (
-            node instanceof ComponentTagNode ||
-            node instanceof ComponentListNode
-        )
-    },
+        return node instanceof ComponentListNode
+    }
     getNode(value) {
         if (value instanceof ComponentNode) {
             return value
@@ -169,18 +142,18 @@ ComponentNode.prototype = {
                 )
             }
         }
-    },
+    }
     prependTo(node) {
         if (this.hasChildNodes(node)) {
             node.prepend(this)
         }
-    },
+    }
     appendTo(node) {
         if (this.hasChildNodes(node)) {
             node.append(this)
         }
         return this
-    },
+    }
     remove() {
         if (this.hasChildNodes(this.parentNode)) {
             const content = this.parentNode.content
@@ -189,94 +162,63 @@ ComponentNode.prototype = {
                 content.splice(index, 1)
             }
         }
-    },
+    }
     toString() {
         return ''
-    },
+    }
     toJSON() {
         return {}
     }
 }
 
-/**
- * @extends ComponentNode
- * @param {Object|string} html
- * @constructor
- */
-export function ComponentSafeNode(html) {
-    ComponentNode.call(this)
-    this.html = String(html)
-}
-
-Object.setPrototypeOf(ComponentSafeNode.prototype, ComponentNode.prototype)
-
-Object.assign(ComponentSafeNode.prototype, {
+export class ComponentSafeNode extends ComponentNode {
+    constructor(html) {
+        super()
+        this.html = String(html)
+    }
     toString() {
         return this.html
-    },
+    }
     toJSON() {
         return {
             html: this.html
         }
     }
-})
-
-/**
- * @extends ComponentNode
- * @param text
- * @constructor
- */
-export function ComponentTextNode(text) {
-    ComponentNode.call(this)
-    this.text = String(options.escapeValue(text))
 }
 
-Object.setPrototypeOf(ComponentTextNode.prototype, ComponentNode.prototype)
-
-Object.assign(ComponentTextNode.prototype, {
+export class ComponentTextNode extends ComponentNode {
+    constructor(text) {
+        super()
+        this.text = String(options.escapeValue(text))
+    }
     toString() {
         return this.text
-    },
+    }
     toJSON() {
         return {
             text: this.text
         }
     }
-})
-
-/**
- * @extends ComponentNode
- * @param {any} content
- * @constructor
- */
-export function ComponentListNode(content) {
-    ComponentNode.call(this)
-    this.content = new ComponentArray()
-    if (isArray(content)) {
-        content.forEach((item) => {
-            this.append(item)
-        })
-    } else {
-        this.append(content)
-    }
 }
 
-/**
- *
- */
-Object.setPrototypeOf(ComponentListNode.prototype, ComponentNode.prototype)
-/**
- *
- */
-Object.assign(ComponentListNode.prototype, {
+export class ComponentListNode extends ComponentNode {
+    constructor(content) {
+        super()
+        this.content = []
+        if (isArray(content)) {
+            content.forEach(this.append.bind(this))
+        } else {
+            this.append(content)
+        }
+    }
     toJSON() {
         return {
             content: this.content.map((i) => i.toJSON())
         }
-    },
+    }
     toString() {
-        return String(this.content)
-    },
+        return String(this.content.join(''))
+    }
     /**
      *
      * @param node
@@ -288,7 +230,7 @@ Object.assign(ComponentListNode.prototype, {
             this.content.push(node.toParent(this))
         }
         return this
-    },
+    }
     /**
      *
      * @param node
@@ -300,41 +242,26 @@ Object.assign(ComponentListNode.prototype, {
             this.content.unshift(node.toParent(this))
         }
         return this
-    },
+    }
     empty() {
         this.content.forEach((item) => {
             item.toParent(null)
         })
-        this.content = []
+        this.content.splice(0, this.content.length)
         return this
     }
-})
-
-/**
- * @extends ComponentListNode
- * @param tag
- * @param attrs
- * @param content
- * @constructor
- */
-export function ComponentTagNode(tag, attrs, content) {
-    ComponentListNode.call(this, content)
-    this.tag = tag
-    this.attrs = {}
-    this.attr(attrs)
 }
 
-/**
- *
- */
-Object.setPrototypeOf(ComponentTagNode.prototype, ComponentListNode.prototype)
-/**
- *
- */
-Object.assign(ComponentTagNode.prototype, {
+export class ComponentTagNode extends ComponentListNode {
+    constructor(tag, attrs, content) {
+        super(content)
+        this.tag = tag
+        this.attrs = {}
+        this.attr(attrs)
+    }
     getAttribute(name) {
         return this.attrs[name]
-    },
+    }
     setAttribute(name, value) {
         if (name) {
             if (name.indexOf('data') === 0 || name.indexOf('aria') === 0) {
@@ -342,22 +269,22 @@ Object.assign(ComponentTagNode.prototype, {
             }
             this.attrs[name] = value
         }
-    },
+    }
     toJSON() {
         return {
             tag: this.tag,
             attrs: this.attrs,
             content: this.content.map((i) => i.toJSON())
         }
-    },
+    }
     toString() {
         return options.tagNodeToString(this)
-    },
+    }
     classList() {
         return String(this.getAttribute('class') || '')
             .trim()
             .split(/\s+/)
-    },
+    }
     addClass() {
         const tokens = [].slice.call(arguments)
         const classList = this.classList()
@@ -368,7 +295,7 @@ Object.assign(ComponentTagNode.prototype, {
         })
         this.setAttribute('class', classList.join(' ').trim())
         return this
-    },
+    }
     removeClass() {
         const tokens = [].slice.call(arguments)
         const classList = this.classList()
@@ -382,7 +309,7 @@ Object.assign(ComponentTagNode.prototype, {
         })
         this.setAttribute('class', classList.join(' ').trim())
         return this
-    },
+    }
     attr(name, value) {
         if (isPlainObject(name)) {
             Object.entries(name).forEach(([key, value]) => {
@@ -392,7 +319,7 @@ Object.assign(ComponentTagNode.prototype, {
             this.setAttribute(name, value)
         }
     }
-})
+}
 
 /**
  * @param {ComponentParams} props

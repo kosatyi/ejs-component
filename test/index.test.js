@@ -6,7 +6,6 @@ import {
     configureComponent,
     getComponent,
     Component,
-    ComponentArray,
     ComponentNode,
     ComponentTextNode,
     ComponentTagNode,
@@ -202,16 +201,6 @@ describe('ComponentListNode', () => {
     })
 })
 
-describe('ComponentArray', () => {
-    const array = new ComponentArray([1, 2, 3])
-    it('toString', () => {
-        expect(array.toString()).toBe('123')
-    })
-    it('toJSON', () => {
-        expect(array.toJSON()).toEqual([1, 2, 3])
-    })
-})
-
 describe('createComponent', () => {
     it('list', () => {
         const component = createComponent('list', {})
@@ -227,6 +216,7 @@ describe('createComponent', () => {
                 self.create('div')
                 self.call('undefined')
                 self.call('list')
+                self.safe('content')
                 self.list()
                 self.pick(props, ['tag', 'attrs'])
                 self.omit(props, ['name'])

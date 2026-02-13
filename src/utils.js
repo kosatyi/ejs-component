@@ -24,11 +24,13 @@ export const merge = (target, ...list) => {
             const value = source[key]
             if (isPlainObject(value)) {
                 target[key] = merge(target[key] || {}, value)
-            } else if (isArray(value)) {
-                target[key] = merge(target[key] || [], value)
-            } else {
-                target[key] = value
+                continue
             }
+            if (isArray(value)) {
+                target[key] = merge(target[key] || [], value)
+                continue
+            }
+            target[key] = value
         }
     }
     return target
