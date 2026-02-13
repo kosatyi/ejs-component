@@ -14,7 +14,7 @@
         "dist/index.esm.js"
     ],
     "scripts": {
-        "test": "vitest --coverage",
+        "test": "vitest run",
         "bench": "vitest bench",
         "start": "rollup -c -w",
         "build": "rollup -c",
