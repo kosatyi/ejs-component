@@ -13,7 +13,7 @@ import {
  * @property {(name:string,component: ComponentRender)=>void} [componentCreated]
  * @property {(value:any)=>string} [escapeValue]
  * @property {(node: ComponentType)=>boolean} [isSafeString]
- * @property {(node: ComponentType)=>string} [tagNodeToString]
+ * @property {(node: ReturnType<ComponentType.toJSON>)=>string} [tagNodeToString]
  */
 
 /**
@@ -278,7 +278,7 @@ export class ComponentTagNode extends ComponentListNode {
         }
     }
     toString() {
-        return options.tagNodeToString(this)
+        return options.tagNodeToString(this.toJSON())
     }
     classList() {
         return String(this.getAttribute('class') || '')

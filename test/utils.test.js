@@ -1,6 +1,34 @@
 import { describe, expect, it } from 'vitest'
 import { isPlainObject, merge } from '../src/utils.js'
 
+describe('merge', () => {
+    it('nested', () => {
+        const firstObject = { prop: 'content', empty: null, undef: undefined }
+        const secondObject = {
+            nested: { key: 'value' }
+        }
+        const resultObject = {
+            undef: undefined,
+            empty: null,
+            prop: 'content',
+            nested: { key: 'value' }
+        }
+        expect(merge(firstObject, secondObject)).toEqual(resultObject)
+    })
+    it('array', () => {
+        const firstArray = [1, 2, 3, 4, 5]
+        const secondArray = [null, 'value', undefined]
+        const resultArray = [null, 'value', undefined, 4, 5]
+        expect(merge([], firstArray, secondArray)).toEqual(resultArray)
+    })
+    it('nested array', () => {
+        const firstArray = [1, [1, 2, 3], 3, 4, 5]
+        const secondArray = [null, 'value', undefined]
+        const resultArray = [null, 'value', undefined, 4, 5]
+        expect(merge([], firstArray, secondArray)).toEqual(resultArray)
+    })
+})
+
 describe('isPlainObject', () => {
     it(`check: string`, () => {
         expect(isPlainObject('string')).toBe(false)
@@ -74,33 +102,5 @@ describe('isPlainObject', () => {
     })
     it(`check: nested object {}`, () => {
         expect(isPlainObject({ nested: { object: {} } })).toBe(true)
-    })
-})
-
-describe('merge', () => {
-    it('nested', () => {
-        const firstObject = { prop: 'content', empty: null, undef: undefined }
-        const secondObject = {
-            nested: { key: 'value' }
-        }
-        const resultObject = {
-            undef: undefined,
-            empty: null,
-            prop: 'content',
-            nested: { key: 'value' }
-        }
-        expect(merge(firstObject, secondObject)).toEqual(resultObject)
-    })
-    it('array', () => {
-        const firstArray = [1, 2, 3, 4, 5]
-        const secondArray = [null, 'value', undefined]
-        const resultArray = [null, 'value', undefined, 4, 5]
-        expect(merge([], firstArray, secondArray)).toEqual(resultArray)
-    })
-    it('nested array', () => {
-        const firstArray = [1, [1, 2, 3], 3, 4, 5]
-        const secondArray = [null, 'value', undefined]
-        const resultArray = [null, 'value', undefined, 4, 5]
-        expect(merge([], firstArray, secondArray)).toEqual(resultArray)
     })
 })
