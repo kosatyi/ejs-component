@@ -1,5 +1,4 @@
 import { expect, describe, it } from 'vitest'
-
 import {
     createComponent,
     removeComponent,
@@ -51,22 +50,24 @@ describe('ComponentTagNode', () => {
             dataTestAttr: 'value',
             ariaTestAttr: 'value'
         },
-        ['submit']
+        [new ComponentTagNode('span', {}, ['content'])]
     )
     it('toString', () => {
         expect(node.toString()).toBe(
-            '{"tag":"button","attrs":{"type":"submit","data-test-attr":"value","aria-test-attr":"value"},"content":[{"text":"submit"}]}'
+            '{"tag":"button","attrs":{"type":"submit","data-test-attr":"value","aria-test-attr":"value"},"content":[{"tag":"span","attrs":{},"content":[{"text":"content"}]}]}'
         )
     })
     it('toJSON', () => {
-        expect(node.toJSON()).toEqual({
+        expect(node.toJSON()).toMatchObject({
             tag: 'button',
             attrs: {
                 type: 'submit',
                 'aria-test-attr': 'value',
                 'data-test-attr': 'value'
             },
-            content: [{ text: 'submit' }]
+            content: [
+                { attrs: {}, tag: 'span', content: [{ text: 'content' }] }
+            ]
         })
     })
     it('addClass', () => {
@@ -173,7 +174,7 @@ describe('ComponentSafeNode', () => {
     it('append safeString', () => {
         const parent = new ComponentTagNode('div')
         parent.append(safeString)
-        expect(parent.toJSON()).toEqual({
+        expect(parent.toJSON()).toMatchObject({
             tag: 'div',
             attrs: {},
             content: [
@@ -191,7 +192,7 @@ describe('ComponentListNode', () => {
         expect(node.toString()).toBe('ListNode')
     })
     it('toJSON', () => {
-        expect(node.toJSON()).toEqual({
+        expect(node.toJSON()).toMatchObject({
             content: [{ text: 'List' }, { text: 'Node' }]
         })
     })

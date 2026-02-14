@@ -130,6 +130,18 @@ const configureComponent = (params = {}) => {
     }
 };
 
+class ComponentArray extends Array {
+    constructor() {
+        super();
+    }
+    toString() {
+        return this.join('')
+    }
+    toJSON() {
+        return Array.from(this)
+    }
+}
+
 class ComponentNode {
     parentNode = null
     toParent(parent) {
@@ -228,7 +240,7 @@ class ComponentTextNode extends ComponentNode {
 class ComponentListNode extends ComponentNode {
     constructor(content) {
         super();
-        this.content = [];
+        this.content = new ComponentArray();
         if (isArray(content)) {
             content.forEach(this.append.bind(this));
         } else {
@@ -237,11 +249,11 @@ class ComponentListNode extends ComponentNode {
     }
     toJSON() {
         return {
-            content: this.content.map((i) => i.toJSON())
+            content: this.content
         }
     }
     toString() {
-        return String(this.content.join(''))
+        return String(this.content)
     }
     /**
      *
@@ -283,6 +295,16 @@ class ComponentTagNode extends ComponentListNode {
         this.attrs = {};
         this.attr(attrs);
     }
+    toString() {
+        return options.tagNodeToString(this.toJSON())
+    }
+    toJSON() {
+        return {
+            tag: this.tag,
+            attrs: this.attrs,
+            content: this.content
+        }
+    }
     getAttribute(name) {
         return this.attrs[name]
     }
@@ -293,16 +315,6 @@ class ComponentTagNode extends ComponentListNode {
             }
             this.attrs[name] = value;
         }
-    }
-    toJSON() {
-        return {
-            tag: this.tag,
-            attrs: this.attrs,
-            content: this.content.map((i) => i.toJSON())
-        }
-    }
-    toString() {
-        return options.tagNodeToString(this.toJSON())
     }
     classList() {
         return String(this.getAttribute('class') || '')
@@ -549,4 +561,4 @@ const getComponent = (name) => {
     return components.get(name)
 };
 
-export { Component, ComponentListNode, ComponentNode, ComponentSafeNode, ComponentTagNode, ComponentTextNode, configureComponent, createComponent, getComponent, removeComponent };
+export { Component, ComponentArray, ComponentListNode, ComponentNode, ComponentSafeNode, ComponentTagNode, ComponentTextNode, configureComponent, createComponent, getComponent, removeComponent };
