@@ -16,7 +16,7 @@
     "scripts": {
         "test": "vitest run",
         "bench": "vitest bench",
-        "start": "rollup -c -w",
+        "start": "rollup -c -w & vitest --coverage",
         "build": "rollup -c",
         "preversion": "npm test",
         "version": "npm run build && git add -A dist",

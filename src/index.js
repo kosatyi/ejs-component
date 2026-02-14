@@ -4,6 +4,7 @@ import {
     isPlainObject,
     isNumber,
     isArray,
+    attrName,
     merge
 } from './utils.js'
 
@@ -106,18 +107,6 @@ export const configureComponent = (params = {}) => {
     }
 }
 
-export class ComponentArray extends Array {
-    constructor() {
-        super()
-    }
-    toString() {
-        return this.join('')
-    }
-    toJSON() {
-        return Array.from(this)
-    }
-}
-
 export class ComponentNode {
     parentNode = null
     toParent(parent) {
@@ -216,7 +205,7 @@ export class ComponentTextNode extends ComponentNode {
 export class ComponentListNode extends ComponentNode {
     constructor(content) {
         super()
-        this.content = new ComponentArray()
+        this.content = []
         if (isArray(content)) {
             content.forEach(this.append.bind(this))
         } else {
@@ -229,7 +218,7 @@ export class ComponentListNode extends ComponentNode {
         }
     }
     toString() {
-        return String(this.content)
+        return String(this.content.join(''))
     }
     /**
      *
@@ -282,14 +271,25 @@ export class ComponentTagNode extends ComponentListNode {
         }
     }
     getAttribute(name) {
-        return this.attrs[name]
+        name = attrName(name)
+        if (name) {
+            return this.attrs[name]
+        }
+    }
+    removeAttribute(name) {
+        name = attrName(name)
+        if (name) {
+            delete this.attrs[name]
+        }
     }
     setAttribute(name, value) {
+        name = attrName(name)
         if (name) {
-            if (name.indexOf('data') === 0 || name.indexOf('aria') === 0) {
-                name = name.replace(/[A-Z]/g, '-$&').toLowerCase()
+            if (value === null || value === undefined) {
+                delete this.attrs[name]
+            } else {
+                this.attrs[name] = value
             }
-            this.attrs[name] = value
         }
     }
     classList() {
@@ -297,8 +297,7 @@ export class ComponentTagNode extends ComponentListNode {
             .trim()
             .split(/\s+/)
     }
-    addClass() {
-        const tokens = [].slice.call(arguments)
+    addClass(...tokens) {
         const classList = this.classList()
         tokens.forEach((token) => {
             if (token && !~classList.indexOf(token)) {
@@ -308,8 +307,7 @@ export class ComponentTagNode extends ComponentListNode {
         this.setAttribute('class', classList.join(' ').trim())
         return this
     }
-    removeClass() {
-        const tokens = [].slice.call(arguments)
+    removeClass(...tokens) {
         const classList = this.classList()
         tokens.forEach((token) => {
             if (token) {

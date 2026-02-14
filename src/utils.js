@@ -30,3 +30,17 @@ export const merge = (target, ...list) => {
     }
     return target
 }
+
+const attrRe = /[\w-]+/
+const attrCamelRe = /^(data|aria)/
+const upperRe = /[A-Z]/g
+
+export const attrName = (name) => {
+    name = String(name)
+    if (name.match(attrRe)) {
+        if (name.match(attrCamelRe)) {
+            name = name.replace(upperRe, '-$&').toLowerCase()
+        }
+        return name
+    }
+}

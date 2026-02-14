@@ -70,6 +70,25 @@ describe('ComponentTagNode', () => {
             ]
         })
     })
+
+    it('setAttribute', () => {
+        const node = new ComponentTagNode('div', {})
+        node.setAttribute('&^*(%(^&^%', 'content')
+        node.setAttribute('', 'content')
+        node.setAttribute('null', 'content')
+        node.setAttribute('123id', 'content')
+        node.setAttribute('id', 'content')
+        node.setAttribute('dataControl', 'layout')
+        expect(node.getAttribute('id')).toBe('content')
+        expect(node.getAttribute('dataControl')).toBe('layout')
+    })
+
+    it('removeAttribute', () => {
+        const node = new ComponentTagNode('div', { class: 'flex' })
+        node.removeAttribute('class')
+        expect(node.getAttribute('class')).toBeUndefined()
+    })
+
     it('addClass', () => {
         const node = new ComponentTagNode('div')
         node.addClass()
