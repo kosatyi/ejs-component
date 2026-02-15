@@ -62,20 +62,38 @@
 
     /**
      * @typedef {ComponentNode|ComponentTagNode|ComponentListNode} ComponentType
-     * @typedef {{tag: string, attrs: Record<string,any>, content?: string | string[]}} ComponentTagNodeParams
+     */
+
+    /**
+     * @typedef {{tag: string, attrs: Object<string,any>, content?: string | string[]}} ComponentTagNodeParams
+     */
+
+    /**
      * @typedef {{content?: string | string[]}} ComponentListNodeParams
+     */
+
+    /**
      * @typedef {ComponentTagNodeParams|ComponentListNodeParams} ComponentParams
+     */
+
+    /**
      * @typedef {{props?: ComponentParams,render?: ComponentCallback}} ComponentTagNodeInstance
+     */
+
+    /**
      * @typedef {{props?: ComponentParams, render: ComponentCallback}} ComponentListNodeInstance
+     */
+
+    /**
      * @typedef {ComponentTagNodeInstance|ComponentListNodeInstance} ComponentInstance
      */
 
     /**
-     * @typedef {(node: ComponentType, props:Record<string,any>,self: Component )=>ComponentNode|void} ComponentCallback
+     * @typedef {(node: ComponentType, props:ComponentParams,self: Component )=>ComponentNode|void} ComponentCallback
      */
 
     /**
-     * @typedef {(props?:Record<string,any>,content?:any)=>ComponentType} ComponentRender
+     * @typedef {(props?:ComponentParams,content?:any)=>ComponentType} ComponentRender
      */
 
     /**
@@ -502,10 +520,10 @@
     const components = new Map();
 
     /**
-     *
+     * @template T
      * @param {string} name
-     * @param {ComponentInstance} config
-     * @return {(props?:ComponentParams,content?:any) => ComponentType}
+     * @param {ComponentInstance<T>} config
+     * @return {ComponentRender}
      */
     const createComponent = (name, config) => {
         const defaults = config.props || {};
