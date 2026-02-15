@@ -8,6 +8,7 @@
     "main": "dist/index.cjs.js",
     "browser": "dist/index.umd.js",
     "module": "dist/index.esm.js",
+    "minified": "dist/index.min.js",
     "files": [
         "dist/index.umd.js",
         "dist/index.cjs.js",
@@ -34,5 +35,8 @@
         "@vitest/coverage-v8": "^3.2.4",
         "rollup": "^3.29.5",
         "vitest": "^3.2.4"
+    },
+    "dependencies": {
+        "@rollup/plugin-terser": "^0.4.4"
     }
 }
