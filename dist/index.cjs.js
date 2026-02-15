@@ -53,58 +53,25 @@ const attrName = (name) => {
  * @property {(name:string,component: ComponentRender)=>void} [componentCreated]
  * @property {(value:any)=>string} [escapeValue]
  * @property {(node: ComponentType)=>boolean} [isSafeString]
- * @property {(node: ReturnType<ComponentType.toJSON>)=>string} [tagNodeToString]
+ * @property {(node: ReturnType<ComponentType>)=>string} [tagNodeToString]
  */
 
 /**
  * @typedef {ComponentNode|ComponentTagNode|ComponentListNode} ComponentType
- */
-
-/**
- * @typedef {Record<string,any>} ComponentTagNodeParams
- * @property {string} [tag]
- * @property {Object} [attrs]
- * @property {Array|String} [content]
- */
-
-/**
- * @typedef {Record<string,any>} ComponentListNodeParams
- * @property {Array|string} [content]
- */
-
-/**
+ * @typedef {{tag: string, attrs: Record<string,any>, content?: string | string[]}} ComponentTagNodeParams
+ * @typedef {{content?: string | string[]}} ComponentListNodeParams
  * @typedef {ComponentTagNodeParams|ComponentListNodeParams} ComponentParams
- */
-
-/**
- * @typedef {Object} ComponentTagNodeInstance
- * @property {ComponentParams} [props]
- * @property {ComponentCallback} [render]
- */
-
-/**
- * @typedef {Object} ComponentListNodeInstance
- * @property {ComponentParams} [props]
- * @property {ComponentCallback} render
- */
-
-/**
+ * @typedef {{props?: ComponentParams,render?: ComponentCallback}} ComponentTagNodeInstance
+ * @typedef {{props?: ComponentParams, render: ComponentCallback}} ComponentListNodeInstance
  * @typedef {ComponentTagNodeInstance|ComponentListNodeInstance} ComponentInstance
  */
 
 /**
- * @typedef {Function} ComponentCallback
- * @param {ComponentType} node
- * @param {Object} props
- * @param {Component} [self]
- * @returns ComponentNode | void
+ * @typedef {(node: ComponentType, props:Record<string,any>,self: Component )=>ComponentNode|void} ComponentCallback
  */
 
 /**
- * @typedef {Function} ComponentRender
- * @param {Object} [props]
- * @param {any} [content]
- * @returns {ComponentType}
+ * @typedef {(props?:Record<string,any>,content?:any)=>ComponentType} ComponentRender
  */
 
 /**
@@ -533,12 +500,12 @@ const components = new Map();
 /**
  *
  * @param {string} name
- * @param {ComponentInstance} proto
- * @return {function(props?:ComponentParams,content?:any): ComponentType}
+ * @param {ComponentInstance} config
+ * @return {(props?:ComponentParams,content?:any) => ComponentType}
  */
-const createComponent = (name, proto) => {
-    const defaults = proto.props || {};
-    const render = proto.render;
+const createComponent = (name, config) => {
+    const defaults = config.props || {};
+    const render = config.render;
     /**
      *
      * @param {Object} [props]
@@ -560,13 +527,15 @@ const createComponent = (name, proto) => {
     options.componentCreated(name, component);
     return component
 };
-
+/**
+ *
+ * @param {string} name
+ */
 const removeComponent = (name) => {
     components.delete(name);
 };
 
 /**
- *
  * @param {string} name
  * @returns {ComponentRender}
  */
