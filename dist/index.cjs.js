@@ -111,7 +111,7 @@ const options = {
 };
 /**
  *
- * @param {Partial<ComponentConfig>} params
+ * @param {Object<string,any>} params
  */
 const configureComponent = (params = {}) => {
     if (isFunction(params.logErrors)) {
