@@ -3,7 +3,6 @@ import {
     isFunction,
     isPlainObject,
     isNumber,
-    isArray,
     attrName,
     merge
 } from './utils.js'
@@ -191,7 +190,7 @@ export class ComponentListNode extends ComponentNode {
     constructor(content) {
         super()
         this.content = []
-        if (isArray(content)) {
+        if (Array.isArray(content)) {
             content.forEach(this.append.bind(this))
         } else {
             this.append(content)
@@ -335,22 +334,25 @@ export function Component(props, render) {
 }
 
 Component.prototype = {
+    empty() {
+        return new ComponentNode()
+    },
     /**
      *
      * @param {string} tag
      * @param {Object} [attrs]
-     * @param [children]
+     * @param {any|any[]} [children]
      * @returns {ComponentTagNode}
      */
-    create(tag, attrs, children) {
-        return new ComponentTagNode(tag, attrs, children)
+    create(tag, attrs, content) {
+        return new ComponentTagNode(tag, attrs, content)
     },
     /**
      * @param {any[]} [children]
      * @returns {ComponentListNode}
      */
-    list(children) {
-        return new ComponentListNode(children)
+    list(content) {
+        return new ComponentListNode(content)
     },
     /**
      *
@@ -435,6 +437,45 @@ Component.prototype = {
      */
     hasProp(object, prop) {
         return Object.prototype.hasOwnProperty.call(object, prop)
+    },
+    /**
+     *
+     * @param item
+     * @return {ComponentNode|ComponentType|*}
+     */
+    getNodeItem(item) {
+        if (item instanceof ComponentNode) return item
+        if (Array.isArray(item)) {
+            const [name, props, content] = item
+            return this.call(name, props, content)
+        }
+        return this.empty()
+    },
+    /**
+     *
+     * @param list
+     * @param node
+     */
+    prependList(list, node) {
+        if (Array.isArray(list)) {
+            list.reverse().forEach((item) => {
+                item = this.getNodeItem(item)
+                if (item) item.prependTo(node)
+            })
+        }
+    },
+    /**
+     *
+     * @param list
+     * @param node
+     */
+    appendList(list, node) {
+        if (Array.isArray(list)) {
+            list.forEach((item) => {
+                item = this.getNodeItem(item)
+                if (item) item.appendTo(node)
+            })
+        }
     }
 }
 

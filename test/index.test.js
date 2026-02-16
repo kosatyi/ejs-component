@@ -1,4 +1,4 @@
-import { expect, describe, it } from 'vitest'
+import { expect, describe, it, test } from 'vitest'
 import {
     createComponent,
     removeComponent,
@@ -13,7 +13,7 @@ import {
 } from '../src/index.js'
 
 describe('Component.extend', () => {
-    it('myMethod', () => {
+    test('myMethod', () => {
         Component.extend({
             myMethod() {
                 return 'value'
@@ -27,16 +27,16 @@ describe('Component.extend', () => {
 
 describe('ComponentNode', () => {
     const node = new ComponentNode()
-    it('toString', () => {
+    test('toString', () => {
         node.toString()
     })
-    it('toJSON', () => {
+    test('toJSON', () => {
         node.toJSON()
     })
 })
 
 describe('ComponentTagNode', () => {
-    it('toString', () => {
+    test('toString', () => {
         const node = new ComponentTextNode('content')
         expect(node.toString()).toBe('content')
     })
@@ -52,12 +52,12 @@ describe('ComponentTagNode', () => {
         },
         [new ComponentTagNode('span', {}, ['content'])]
     )
-    it('toString', () => {
+    test('toString', () => {
         expect(node.toString()).toBe(
             '{"tag":"button","attrs":{"type":"submit","data-test-attr":"value","aria-test-attr":"value"},"content":[{"tag":"span","attrs":{},"content":[{"text":"content"}]}]}'
         )
     })
-    it('toJSON', () => {
+    test('toJSON', () => {
         expect(node.toJSON()).toMatchObject({
             tag: 'button',
             attrs: {
@@ -71,7 +71,7 @@ describe('ComponentTagNode', () => {
         })
     })
 
-    it('setAttribute', () => {
+    test('setAttribute', () => {
         const node = new ComponentTagNode('div', {})
         node.setAttribute('&^*(%(^&^%', 'content')
         node.setAttribute('', 'content')
@@ -83,20 +83,20 @@ describe('ComponentTagNode', () => {
         expect(node.getAttribute('dataControl')).toBe('layout')
     })
 
-    it('removeAttribute', () => {
+    test('removeAttribute', () => {
         const node = new ComponentTagNode('div', { class: 'flex' })
         node.removeAttribute('class')
         expect(node.getAttribute('class')).toBeUndefined()
     })
 
-    it('addClass', () => {
+    test('addClass', () => {
         const node = new ComponentTagNode('div')
         node.addClass()
         node.addClass('')
         node.addClass('flex', 'flex-row')
         expect(node.getAttribute('class')).toEqual('flex flex-row')
     })
-    it('removeClass', () => {
+    test('removeClass', () => {
         const node = new ComponentTagNode('div', { class: 'flex align-center' })
         node.removeClass()
         node.removeClass('', 'flex-row')
@@ -104,27 +104,27 @@ describe('ComponentTagNode', () => {
         expect(node.getAttribute('class')).toEqual('align-center')
     })
 
-    it('append valid', () => {
+    test('append valid', () => {
         const node = new ComponentTagNode('div', {})
         node.append('string')
         node.append(new ComponentTagNode('div'))
         node.append({ tag: 'div', attrs: {} })
         expect(node.content.length).toEqual(3)
     })
-    it('append invalid', () => {
+    test('append invalid', () => {
         const node = new ComponentTagNode('div', {})
         node.append(undefined)
         node.append(null)
         node.append({})
         expect(node.content.length).toEqual(0)
     })
-    it('prepend valid', () => {
+    test('prepend valid', () => {
         const node = new ComponentTagNode('div', {})
         node.prepend('string')
         node.prepend(new ComponentTagNode('div'))
         expect(node.content.length).toEqual(2)
     })
-    it('prepend invalid', () => {
+    test('prepend invalid', () => {
         const node = new ComponentTagNode('div', {})
         node.prepend(undefined)
         node.prepend(null)
@@ -132,31 +132,31 @@ describe('ComponentTagNode', () => {
         node.prepend(false)
         expect(node.content.length).toEqual(0)
     })
-    it('appendTo valid', () => {
+    test('appendTo valid', () => {
         const parent = new ComponentTagNode('div', {})
         const node = new ComponentTagNode('div', {})
         node.appendTo(parent)
         expect(node.parentNode).toEqual(parent)
     })
-    it('appendTo invalid', () => {
+    test('appendTo invalid', () => {
         const node = new ComponentTagNode('div', {})
         node.appendTo('string')
         node.appendTo({})
         expect(node.parentNode).toBe(null)
     })
-    it('prependTo valid', () => {
+    test('prependTo valid', () => {
         const parent = new ComponentTagNode('div', {})
         const node = new ComponentTagNode('div', {})
         node.prependTo(parent)
         expect(node.parentNode).toEqual(parent)
     })
-    it('prependTo invalid', () => {
+    test('prependTo invalid', () => {
         const node = new ComponentTagNode('div', {})
         node.prependTo('string')
         node.prependTo({})
         expect(node.parentNode).toBe(null)
     })
-    it('remove', () => {
+    test('remove', () => {
         const parent = new ComponentTagNode('div')
         const child = new ComponentTagNode('span')
         parent.append(child)
@@ -182,15 +182,15 @@ describe('ComponentSafeNode', () => {
         }
     })
     const safeString = new SafeString('content')
-    it('toString', () => {
+    test('toString', () => {
         const safeNode = new ComponentSafeNode(safeString)
         expect(safeNode.toString()).toBe('content')
     })
-    it('toJSON', () => {
+    test('toJSON', () => {
         const safeNode = new ComponentSafeNode(safeString)
         expect(safeNode.toJSON()).toEqual({ html: 'content' })
     })
-    it('append safeString', () => {
+    test('append safeString', () => {
         const parent = new ComponentTagNode('div')
         parent.append(safeString)
         expect(parent.toJSON()).toMatchObject({
@@ -207,26 +207,32 @@ describe('ComponentSafeNode', () => {
 
 describe('ComponentListNode', () => {
     const node = new ComponentListNode(['List', 'Node'])
-    it('toString', () => {
+    test('toString', () => {
         expect(node.toString()).toBe('ListNode')
     })
-    it('toJSON', () => {
+    test('toJSON', () => {
         expect(node.toJSON()).toMatchObject({
             content: [{ text: 'List' }, { text: 'Node' }]
         })
     })
-    it('empty', () => {
+    test('empty', () => {
         node.empty()
         expect(node.content.length).toEqual(0)
     })
 })
 
 describe('createComponent', () => {
-    it('list', () => {
+    test('list', () => {
         const component = createComponent('list', {})
         expect(component()).toBeInstanceOf(ComponentListNode)
     })
-    it('tag', () => {
+    test('tag', () => {
+        const item = createComponent('item', {
+            props: {
+                tag: 'div'
+            },
+            render() {}
+        })
         const component = createComponent('button', {
             props: {
                 tag: 'button',
@@ -241,12 +247,21 @@ describe('createComponent', () => {
                 self.pick(props, ['tag', 'attrs'])
                 self.omit(props, ['name'])
                 self.join([1, 2, 3], '-')
+                self.appendList({}, node)
+                self.prependList({}, node)
+                self.appendList([['item', {}, []]], node)
+                self.prependList([['item', {}, []]], node)
+                self.appendList(self.empty(), node)
+                self.prependList(self.empty(), node)
+                self.getNodeItem(['item', {}, []])
+                self.getNodeItem(self.empty())
+                self.getNodeItem({})
                 self.hasProp(props, 'tag')
             }
         })
         expect(component({}, ['content'])).toBeInstanceOf(ComponentTagNode)
     })
-    it('tag:replace', () => {
+    test('tag:replace', () => {
         const component = createComponent('div', {
             props: {
                 tag: 'div',
@@ -260,7 +275,7 @@ describe('createComponent', () => {
         expect(result).toBeInstanceOf(ComponentTagNode)
         expect(result.tag).toBe('span')
     })
-    it('undefined', () => {
+    test('undefined', () => {
         const component = createComponent('div', {
             props: {},
             render() {
