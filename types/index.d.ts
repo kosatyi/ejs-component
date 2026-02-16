@@ -1,4 +1,5 @@
-interface ComponentNode {
+export class ComponentNode {
+    constructor()
     parentNode: ComponentNode
     toParent(parent: any): this
     isSafeString(node: any): boolean
@@ -10,20 +11,27 @@ interface ComponentNode {
     toString(): string
     toJSON(): Record<string, any>
 }
-interface ComponentSafeNode extends ComponentNode {
+
+export class ComponentSafeNode extends ComponentNode {
     html: string
+    constructor(html: string)
 }
 
-interface ComponentTextNode extends ComponentNode {
+export class ComponentTextNode extends ComponentNode {
     text: string
+    constructor(text: string)
 }
-interface ComponentListNode extends ComponentNode {
+
+export class ComponentListNode extends ComponentNode {
     content: ComponentNode[]
+    constructor(content: any[])
     append(node: any): this
     prepend(node: any): this
     empty(): void
 }
-interface ComponentTagNode extends ComponentListNode {
+
+export class ComponentTagNode extends ComponentListNode {
+    constructor(tag: string, attrs: Record<string, any>, content: any | any[])
     getAttribute(name: string): any
     setAttribute(name: string, value: any): void
     removeAttribute(name: string): void
@@ -33,20 +41,20 @@ interface ComponentTagNode extends ComponentListNode {
     attr(name: string | Record<string, any>, value?: any): void
 }
 
-type ComponentType =
+export type ComponentType =
     | ComponentTagNode
     | ComponentTextNode
     | ComponentSafeNode
     | ComponentListNode
 
-class Component {
+export class Component {
     clean<T extends Record<string, any>>(params: T): Partial<T>
-    pick<T, K extends string, E = {}>(
+    pick<T, K extends keyof T, E = {}>(
         params: T,
         props: K[],
         extra?: E
     ): Pick<T, K> & E
-    omit<T, K extends string, E = {}>(
+    omit<T, K extends keyof T, E = {}>(
         params: T,
         props: K[],
         extra?: E
@@ -64,28 +72,38 @@ class Component {
         content?: any | any[]
     ): ComponentTagNode
     join(list: any[], delimiter: string): string
-    hasProp(object, prop): boolean
+    hasProp(object: Record<string, any>, prop: string): boolean
     getNodeItem(item: any): ComponentType
-    prependList(list, node: ComponentListNode): void
-    appendList(list, node: ComponentListNode): void
+    prependList(list: any[], node: ComponentListNode): void
+    appendList(list: any[], node: ComponentListNode): void
     static extend<Proto>(props: Proto): Proto & Component
 }
 
-type ComponentConfig<Props> = {
+export type ComponentParams<Props> = {
     props: Props
     render(node: ComponentType, props: Props, self: Component): ComponentType
 }
 
-type ComponentRenderer = (
+export type ComponentRenderer = (
     props: Record<string, any>,
     content?: any | any[]
 ) => ComponentType
 
 export function createComponent<Props>(
     name: string,
-    config: ComponentConfig<Props>
+    params: ComponentParams<Props>
 ): (props: Record<string, any>, content: any) => void
 
 export function getComponent<K extends string, V extends ComponentRenderer>(
     name: K
 ): V
+
+export interface ComponentConfig extends Record<string, any> {
+    logErrors(): void
+    componentCreated(name: string, component: ComponentRenderer): void
+    escapeValue(value: string): string
+    isSafeString(node: ComponentNode): boolean
+    tagToNodeString(node: ReturnType<ComponentType>): string
+}
+
+export function configureComponent(options: Partial<ComponentConfig>)
