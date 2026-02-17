@@ -44,42 +44,6 @@ const attrName = (name) => {
     }
 };
 
-/**
- * @typedef {{tag: string, attrs: Object<string,any>, content?: string | string[]}} ComponentTagNodeParams
- */
-
-/**
- * @typedef {{content?: string | string[]}} ComponentListNodeParams
- */
-
-/**
- * @typedef {ComponentTagNodeParams|ComponentListNodeParams} ComponentParams
- */
-
-/**
- * @typedef {{props?: ComponentParams,render?: ComponentCallback}} ComponentTagNodeInstance
- */
-
-/**
- * @typedef {{props?: ComponentParams, render: ComponentCallback}} ComponentListNodeInstance
- */
-
-/**
- * @typedef {ComponentTagNodeInstance|ComponentListNodeInstance} ComponentInstance
- */
-
-/**
- * @typedef {(node: ComponentType, props:ComponentParams,self: Component )=>ComponentNode|void} ComponentCallback
- */
-
-/**
- * @typedef {(props?:ComponentParams,content?:any)=>ComponentType} ComponentRender
- */
-
-/**
- *
- * @type {ComponentConfig}
- */
 const options = {
     logErrors() {},
     componentCreated(name, component) {},
