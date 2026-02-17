@@ -8,19 +8,6 @@ import {
 } from './utils.js'
 
 /**
- * @typedef {object} ComponentConfig
- * @property {(e:Error)=>any} [logErrors]
- * @property {(name:string,component: ComponentRender)=>void} [componentCreated]
- * @property {(value:any)=>string} [escapeValue]
- * @property {(node: ComponentType)=>boolean} [isSafeString]
- * @property {(node: ReturnType<ComponentType>)=>string} [tagNodeToString]
- */
-
-/**
- * @typedef {ComponentNode|ComponentTagNode|ComponentListNode} ComponentType
- */
-
-/**
  * @typedef {{tag: string, attrs: Object<string,any>, content?: string | string[]}} ComponentTagNodeParams
  */
 
@@ -57,7 +44,7 @@ import {
  * @type {ComponentConfig}
  */
 const options = {
-    logErrors(e) {},
+    logErrors() {},
     componentCreated(name, component) {},
     isSafeString() {
         return false
@@ -69,10 +56,7 @@ const options = {
         return JSON.stringify(node)
     }
 }
-/**
- *
- * @param {Object<string,any>} params
- */
+
 export const configureComponent = (params = {}) => {
     if (isFunction(params.logErrors)) {
         options.logErrors = params.logErrors
@@ -204,11 +188,6 @@ export class ComponentListNode extends ComponentNode {
     toString() {
         return String(this.content.join(''))
     }
-    /**
-     *
-     * @param node
-     * @returns {ComponentListNode}
-     */
     append(node) {
         node = this.getNode(node)
         if (node instanceof ComponentNode) {
@@ -216,11 +195,6 @@ export class ComponentListNode extends ComponentNode {
         }
         return this
     }
-    /**
-     *
-     * @param node
-     * @return {ComponentListNode}
-     */
     prepend(node) {
         node = this.getNode(node)
         if (node instanceof ComponentNode) {
@@ -315,12 +289,102 @@ export class ComponentTagNode extends ComponentListNode {
     }
 }
 
-/**
- * @param {ComponentParams} props
- * @param {ComponentCallback} render
- * @return {ComponentType|string}
- */
-export function Component(props, render) {
+export class Component {
+    static extend(object, options = {}) {
+        Object.entries(object).forEach(([name, value]) => {
+            Component.defineProperty(name, value, options)
+        })
+        return Component
+    }
+    static defineProperty(
+        name,
+        value,
+        { writable, configurable, enumerable } = {}
+    ) {
+        return Object.defineProperty(Component.prototype, name, {
+            value,
+            writable,
+            configurable,
+            enumerable
+        })
+    }
+    empty() {
+        return new ComponentNode()
+    }
+    create(tag, attrs, content) {
+        return new ComponentTagNode(tag, attrs, content)
+    }
+    list(content) {
+        return new ComponentListNode(content)
+    }
+    safe(value) {
+        return new ComponentSafeNode(value)
+    }
+    call(name, props, content) {
+        const instance = components.get(name)
+        if (instance) {
+            return instance(props || {}, content)
+        }
+    }
+    pick(params, props, extra) {
+        return Object.assign(
+            Object.fromEntries(
+                Object.entries(this.clean(params)).filter(
+                    ([name]) => !!~props.indexOf(name)
+                )
+            ),
+            this.clean(extra)
+        )
+    }
+    omit(params, props, extra) {
+        return Object.assign(
+            Object.fromEntries(
+                Object.entries(this.clean(params)).filter(
+                    ([name]) => !~props.indexOf(name)
+                )
+            ),
+            this.clean(extra)
+        )
+    }
+    clean(params) {
+        if (!params) return {}
+        return Object.fromEntries(
+            Object.entries(params).filter(([_, v]) => v !== undefined)
+        )
+    }
+    join(array, delimiter) {
+        return [].slice.call(array).join(delimiter).trim()
+    }
+    hasProp(object, prop) {
+        return Object.prototype.hasOwnProperty.call(object, prop)
+    }
+    getNodeItem(item) {
+        if (item instanceof ComponentNode) return item
+        if (Array.isArray(item)) {
+            const [name, props, content] = item
+            return this.call(name, props, content)
+        }
+        return this.empty()
+    }
+    prependList(list, node) {
+        if (Array.isArray(list)) {
+            list.reverse().forEach((item) => {
+                item = this.getNodeItem(item)
+                if (item) item.prependTo(node)
+            })
+        }
+    }
+    appendList(list, node) {
+        if (Array.isArray(list)) {
+            list.forEach((item) => {
+                item = this.getNodeItem(item)
+                if (item) item.appendTo(node)
+            })
+        }
+    }
+}
+
+export const renderComponent = (props, render) => {
     let node, replace
     if (isString(props.tag)) {
         node = new ComponentTagNode(props.tag, props.attrs, props.content)
@@ -333,212 +397,18 @@ export function Component(props, render) {
     return replace ? replace : node
 }
 
-Component.prototype = {
-    empty() {
-        return new ComponentNode()
-    },
-    /**
-     *
-     * @param {string} tag
-     * @param {Object} [attrs]
-     * @param {any|any[]} [children]
-     * @returns {ComponentTagNode}
-     */
-    create(tag, attrs, content) {
-        return new ComponentTagNode(tag, attrs, content)
-    },
-    /**
-     * @param {any[]} [children]
-     * @returns {ComponentListNode}
-     */
-    list(content) {
-        return new ComponentListNode(content)
-    },
-    /**
-     *
-     * @param {string} value
-     * @return {ComponentSafeNode}
-     */
-    safe(value) {
-        return new ComponentSafeNode(value)
-    },
-    /**
-     *
-     * @param {string} name
-     * @param {object} [props]
-     * @param {any[]} [content]
-     * @return {ComponentType}
-     */
-    call(name, props, content) {
-        const instance = components.get(name)
-        if (instance) {
-            return instance(props || {}, content)
-        }
-    },
-    /**
-     *
-     * @param {object} params
-     * @param {array<string|number>} props
-     * @param {object} [extra]
-     * @returns {{[p: string]: any}}
-     */
-    pick(params, props, extra) {
-        return Object.assign(
-            Object.fromEntries(
-                Object.entries(this.clean(params)).filter(
-                    ([name]) => !!~props.indexOf(name)
-                )
-            ),
-            this.clean(extra)
-        )
-    },
-    /**
-     *
-     * @param {object} params
-     * @param {array<string|number>} props
-     * @param {object} [extra]
-     * @returns {{[p: string]: any}}
-     */
-    omit(params, props, extra) {
-        return Object.assign(
-            Object.fromEntries(
-                Object.entries(this.clean(params)).filter(
-                    ([name]) => !~props.indexOf(name)
-                )
-            ),
-            this.clean(extra)
-        )
-    },
-    /**
-     *
-     * @param {object} params
-     * @returns {{[p: string]: any}}
-     */
-    clean(params) {
-        if (!params) return {}
-        return Object.fromEntries(
-            Object.entries(params).filter(([_, v]) => v !== undefined)
-        )
-    },
-    /**
-     *
-     * @param array
-     * @param delimiter
-     * @returns {string}
-     */
-    join(array, delimiter) {
-        return [].slice.call(array).join(delimiter).trim()
-    },
-    /**
-     *
-     * @param object
-     * @param prop
-     * @returns {boolean}
-     */
-    hasProp(object, prop) {
-        return Object.prototype.hasOwnProperty.call(object, prop)
-    },
-    /**
-     *
-     * @param item
-     * @return {ComponentNode|ComponentType|*}
-     */
-    getNodeItem(item) {
-        if (item instanceof ComponentNode) return item
-        if (Array.isArray(item)) {
-            const [name, props, content] = item
-            return this.call(name, props, content)
-        }
-        return this.empty()
-    },
-    /**
-     *
-     * @param list
-     * @param node
-     */
-    prependList(list, node) {
-        if (Array.isArray(list)) {
-            list.reverse().forEach((item) => {
-                item = this.getNodeItem(item)
-                if (item) item.prependTo(node)
-            })
-        }
-    },
-    /**
-     *
-     * @param list
-     * @param node
-     */
-    appendList(list, node) {
-        if (Array.isArray(list)) {
-            list.forEach((item) => {
-                item = this.getNodeItem(item)
-                if (item) item.appendTo(node)
-            })
-        }
-    }
-}
-
-/**
- * @template {Object<string,any>} T
- * @param {T} object
- * @param {object} [options]
- */
-Component.extend = (object, options = {}) => {
-    /**
-     * @template T
-     * @type {T & Component.prototype}
-     */
-    Object.entries(object).forEach(([name, value]) => {
-        Component.defineProperty(name, value, options)
-    })
-    return Component
-}
-
-Component.defineProperty = (
-    name,
-    value,
-    { writable, configurable, enumerable }
-) => {
-    /**
-     * @template T
-     * @type {T & Component.prototype}
-     */
-    return Object.defineProperty(Component.prototype, name, {
-        value,
-        writable,
-        configurable,
-        enumerable
-    })
-}
-
-/**
- * @type {Map<string, ComponentRender>}
- */
 const components = new Map()
 
-/**
- * @template T
- * @param {string} name
- * @param {ComponentInstance<T>} config
- * @return {ComponentRender}
- */
 export const createComponent = (name, config) => {
     const defaults = config.props || {}
     const render = config.render
-    /**
-     *
-     * @param {Object} [props]
-     * @param {any} [content]
-     * @return {ComponentType}
-     */
     const component = (props, content) => {
         const config = merge({}, defaults, props || {})
         if (content) {
             config.content = content
         }
         try {
-            return Component(config, render)
+            return renderComponent(config, render)
         } catch (e) {
             options.logErrors(e)
         }
@@ -547,18 +417,11 @@ export const createComponent = (name, config) => {
     options.componentCreated(name, component)
     return component
 }
-/**
- *
- * @param {string} name
- */
+
 export const removeComponent = (name) => {
     components.delete(name)
 }
 
-/**
- * @param {string} name
- * @returns {ComponentRender}
- */
 export const getComponent = (name) => {
     return components.get(name)
 }

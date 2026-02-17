@@ -2,6 +2,7 @@ import { expect, describe, it, test } from 'vitest'
 import {
     createComponent,
     removeComponent,
+    renderComponent,
     configureComponent,
     getComponent,
     Component,
@@ -19,7 +20,7 @@ describe('Component.extend', () => {
                 return 'value'
             }
         })
-        Component({}, function (node, props, self) {
+        renderComponent({}, (node, props, self) => {
             expect(self.myMethod()).toBe('value')
         })
     })

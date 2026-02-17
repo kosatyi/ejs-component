@@ -23,7 +23,7 @@ export class ComponentTextNode extends ComponentNode {
 }
 
 export class ComponentListNode extends ComponentNode {
-    content: ComponentNode[]
+    content: any[]
     constructor(content: any[])
     append(node: any): this
     prepend(node: any): this
@@ -31,6 +31,9 @@ export class ComponentListNode extends ComponentNode {
 }
 
 export class ComponentTagNode extends ComponentListNode {
+    tag: string
+    attrs: Record<string, any>
+    content: any[]
     constructor(tag: string, attrs: Record<string, any>, content: any | any[])
     getAttribute(name: string): any
     setAttribute(name: string, value: any): void
@@ -79,9 +82,12 @@ export class Component {
     static extend<Proto>(props: Proto): Proto & Component
 }
 
-export type ComponentParams<Props> = {
-    props: Props
-    render(node: ComponentType, props: Props, self: Component): ComponentType
+export interface ComponentConfig {
+    logErrors(e: Error): void
+    componentCreated(name: string, component: ComponentRenderer): void
+    escapeValue(value: string): string
+    isSafeString(node: ComponentNode): boolean
+    tagNodeToString(node: ComponentTagNode): string
 }
 
 export type ComponentRenderer = (
@@ -89,21 +95,24 @@ export type ComponentRenderer = (
     content?: any | any[]
 ) => ComponentType
 
-export function createComponent<Props>(
+export const renderComponent: ComponentRenderer
+
+export function createComponent<ComponentProps extends Record<string, any>>(
     name: string,
-    params: ComponentParams<Props>
-): (props: Record<string, any>, content: any) => void
+    params: {
+        props?: ComponentProps
+        render?(
+            node: ComponentType,
+            props: ComponentProps,
+            self: Component
+        ): ComponentType | void
+    }
+): typeof renderComponent
 
 export function getComponent<K extends string, V extends ComponentRenderer>(
     name: K
 ): V
 
-export interface ComponentConfig extends Record<string, any> {
-    logErrors(): void
-    componentCreated(name: string, component: ComponentRenderer): void
-    escapeValue(value: string): string
-    isSafeString(node: ComponentNode): boolean
-    tagToNodeString(node: ReturnType<ComponentType>): string
-}
+export function removeComponent(name: string): void
 
-export function configureComponent(options: Partial<ComponentConfig>)
+export function configureComponent(options: Partial<ComponentConfig>): void
