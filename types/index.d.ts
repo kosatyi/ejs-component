@@ -5,8 +5,8 @@ export class ComponentNode {
     isSafeString(node: any): boolean
     hasChildNodes(node: any): boolean
     getNode(value: any): ComponentType
-    prependTo(node: ComponentType): this
-    appendTo(node: ComponentType): this
+    prependTo(node: ComponentTreeType): this
+    appendTo(node: ComponentTreeType): this
     remove(): void
     toString(): string
     toJSON(): Record<string, any>
@@ -44,11 +44,12 @@ export class ComponentTagNode extends ComponentListNode {
     attr(name: string | Record<string, any>, value?: any): void
 }
 
+export type ComponentTreeType = ComponentTagNode | ComponentListNode
+
 export type ComponentType =
-    | ComponentTagNode
+    | ComponentTreeType
     | ComponentTextNode
     | ComponentSafeNode
-    | ComponentListNode
 
 export class Component {
     clean<T extends Record<string, any>>(params: T): Partial<T>
@@ -77,8 +78,8 @@ export class Component {
     join(list: any[], delimiter: string): string
     hasProp(object: Record<string, any>, prop: string): boolean
     getNodeItem(item: any): ComponentType
-    prependList(list: any[], node: ComponentListNode): void
-    appendList(list: any[], node: ComponentListNode): void
+    prependList(list: any[], node: ComponentTreeType): void
+    appendList(list: any[], node: ComponentTreeType): void
     static extend<Proto>(props: Proto): Proto & Component
 }
 
@@ -102,7 +103,7 @@ export function createComponent<ComponentProps extends Record<string, any>>(
     params: {
         props?: ComponentProps
         render?(
-            node: ComponentType,
+            node: ComponentTreeType,
             props: ComponentProps,
             self: Component
         ): ComponentType | void
