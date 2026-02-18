@@ -356,7 +356,7 @@ export const renderComponent = (props, render) => {
         node = new ComponentListNode(props.content)
     }
     if (isFunction(render)) {
-        replace = render(node, props, Component.prototype)
+        replace = render(node, props, new Component())
     }
     return replace ? replace : node
 }
