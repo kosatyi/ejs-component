@@ -215,7 +215,7 @@ export class ComponentTagNode extends ComponentListNode {
         }
     }
     classList() {
-        return String(this.getAttribute('class') || '')
+        return String(this.attrs.class || '')
             .trim()
             .split(/\s+/)
     }
@@ -226,7 +226,7 @@ export class ComponentTagNode extends ComponentListNode {
                 classList.push(token)
             }
         })
-        this.setAttribute('class', classList.join(' ').trim())
+        this.attrs.class = classList.join(' ').trim()
         return this
     }
     removeClass(...tokens) {
@@ -239,7 +239,7 @@ export class ComponentTagNode extends ComponentListNode {
                 }
             }
         })
-        this.setAttribute('class', classList.join(' ').trim())
+        this.attrs.class = classList.join(' ').trim()
         return this
     }
     attr(name, value) {
@@ -349,14 +349,14 @@ export class Component {
 }
 
 export const renderComponent = (props, render) => {
-    let node, replace
+    let node, replace, self = new Component()
     if (isString(props.tag)) {
         node = new ComponentTagNode(props.tag, props.attrs, props.content)
     } else {
         node = new ComponentListNode(props.content)
     }
     if (isFunction(render)) {
-        replace = render(node, props, new Component())
+        replace = render(node, props, self)
     }
     return replace ? replace : node
 }
