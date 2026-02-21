@@ -7,21 +7,23 @@
     const isString = (v) => typeof v === 'string';
     const isNumber = (v) => typeof v === 'number';
     const isFunction = (v) => typeof v === 'function';
-
-    const isPlainObject = (o) => {
-        if (typeof o !== 'object' || o === null) return false
-        let proto = o;
-        while (Object.getPrototypeOf(proto) !== null) {
-            proto = Object.getPrototypeOf(proto);
+    const isPlainObject = (v) => {
+        if (!v || typeof v !== 'object') return false
+        const proto = Object.getPrototypeOf(v);
+        const hasObjectPrototype =
+            proto === null ||
+            proto === Object.prototype ||
+            Object.getPrototypeOf(proto) === null;
+        if (!hasObjectPrototype) {
+            return false
         }
-        return Object.getPrototypeOf(o) === proto
+        return Object.prototype.toString.call(v) === '[object Object]'
     };
 
     const merge = (target, ...list) => {
         for (const index of Object.keys(list)) {
-            const source = list[index];
-            for (const key of Object.keys(source)) {
-                const value = source[key];
+            for (const key of Object.keys(list[index])) {
+                const value = list[index][key];
                 if (isPlainObject(value)) {
                     target[key] = merge(target[key] || {}, value);
                     continue
@@ -180,7 +182,7 @@
             super();
             this.content = [];
             if (content instanceof ComponentListNode) {
-                this.content = content.content;
+                this.content = Array.from(content.content);
             } else if (Array.isArray(content)) {
                 content.forEach(this.append.bind(this));
             } else {
@@ -307,37 +309,30 @@
     }
 
     class ComponentTreeNode extends ComponentNode {
-        constructor(content) {
+        constructor(data) {
             super();
-            this.root = this.render(content);
+            this.root = this.#render(data);
         }
-        render(item) {
-            if (Array.isArray(item)) {
-                const [name, props, content] = item;
-                if (isPlainObject(props)) {
-                    if (isString(name)) {
-                        const component = getComponent(name);
-                        if (component === undefined) return
-                        const { $key, ...componentProps } = props;
-                        const result = component(
-                            componentProps,
-                            this.render(content)
-                        );
-                        if (isString($key)) {
-                            this[$key] = result;
-                        }
-                        return result
+        #render(data) {
+            if (Array.isArray(data)) {
+                const [name, props, content] = data;
+                if (isString(name) && isPlainObject(props)) {
+                    const component = getComponent(name);
+                    if (component === undefined) return
+                    const { $key, ...componentProps } = props;
+                    const result = component(componentProps, this.#render(content));
+                    if (isString($key)) {
+                        this[$key] = result;
                     }
-                    return
-                } else {
-                    return new ComponentListNode(
-                        item
-                            .filter((child) => child !== undefined)
-                            .map((child) => this.render(child))
-                    )
+                    return result
                 }
+                return new ComponentListNode(
+                    data
+                        .filter((child) => child !== undefined)
+                        .map((child) => this.#render(child))
+                )
             }
-            return new ComponentTextNode(item)
+            return this.getNode(data)
         }
         toString() {
             return String(this.root)

@@ -137,7 +137,7 @@ export class ComponentListNode extends ComponentNode {
         super()
         this.content = []
         if (content instanceof ComponentListNode) {
-            this.content = content.content
+            this.content = Array.from(content.content)
         } else if (Array.isArray(content)) {
             content.forEach(this.append.bind(this))
         } else {
@@ -264,37 +264,30 @@ export class ComponentTagNode extends ComponentListNode {
 }
 
 export class ComponentTreeNode extends ComponentNode {
-    constructor(content) {
+    constructor(data) {
         super()
-        this.root = this.render(content)
+        this.root = this.#render(data)
     }
-    render(item) {
-        if (Array.isArray(item)) {
-            const [name, props, content] = item
-            if (isPlainObject(props)) {
-                if (isString(name)) {
-                    const component = getComponent(name)
-                    if (component === undefined) return
-                    const { $key, ...componentProps } = props
-                    const result = component(
-                        componentProps,
-                        this.render(content)
-                    )
-                    if (isString($key)) {
-                        this[$key] = result
-                    }
-                    return result
+    #render(data) {
+        if (Array.isArray(data)) {
+            const [name, props, content] = data
+            if (isString(name) && isPlainObject(props)) {
+                const component = getComponent(name)
+                if (component === undefined) return
+                const { $key, ...componentProps } = props
+                const result = component(componentProps, this.#render(content))
+                if (isString($key)) {
+                    this[$key] = result
                 }
-                return
-            } else {
-                return new ComponentListNode(
-                    item
-                        .filter((child) => child !== undefined)
-                        .map((child) => this.render(child))
-                )
+                return result
             }
+            return new ComponentListNode(
+                data
+                    .filter((child) => child !== undefined)
+                    .map((child) => this.#render(child))
+            )
         }
-        return new ComponentTextNode(item)
+        return this.getNode(data)
     }
     toString() {
         return String(this.root)

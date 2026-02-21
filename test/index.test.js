@@ -121,10 +121,11 @@ describe('ComponentTagNode', () => {
 
     it('append valid', () => {
         const node = new ComponentTagNode('div', {})
+        node.append(new ComponentTreeNode(['div', {}, 'name']))
         node.append('string')
         node.append(new ComponentTagNode('div'))
         node.append({ tag: 'div', attrs: {} })
-        expect(node.content.length).toEqual(3)
+        expect(node.content.length).toEqual(4)
     })
     it('append invalid', () => {
         const node = new ComponentTagNode('div', {})
@@ -405,17 +406,27 @@ describe('ComponentTreeNode', () => {
             node.addClass(props.class)
         }
     })
+    createComponent('slot.list', {
+        props: {}
+    })
     const node = new ComponentTreeNode([
         'slot',
         { class: 'widget' },
         [
             [1, {}],
-            ['undef', {}, 'content'],
-            [('slot', { $key: 'header', class: 'widget-header' }, 'header')],
-            ['slot', { $key: 'content', class: 'widget-content' }, 'content'],
+            ['undefined', {}, 'content'],
+            ['slot.list', { $key: 'root', class: 'widget-header' }, 'header'],
+            ['slot', { $key: 'header', class: 'widget-header' }, 'header'],
+            ['slot.list', { $key: 'content' }, 'content'],
             ['slot', { $key: 'footer', class: 'widget-footer' }, 'footer']
         ]
     ])
+    it('valid', () => {
+        expect(node.root).toBeInstanceOf(ComponentTagNode)
+        expect(node.header).toBeInstanceOf(ComponentTagNode)
+        expect(node.content).toBeInstanceOf(ComponentListNode)
+        expect(node.footer).toBeInstanceOf(ComponentTagNode)
+    })
     it('toString', () => {
         String(node)
     })

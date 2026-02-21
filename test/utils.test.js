@@ -81,9 +81,6 @@ describe('isPlainObject', () => {
     it(`check: Object.create({})`, () => {
         expect(isPlainObject(Object.create({}))).toBe(false)
     })
-    it(`check: Object.create(null)`, () => {
-        expect(isPlainObject(Object.create(null))).toBe(false)
-    })
     it(`check: () => {}`, () => {
         const callback = () => {}
         expect(isPlainObject(callback)).toBe(false)
@@ -96,6 +93,9 @@ describe('isPlainObject', () => {
         ConstRuct.prototype = { length: 0 }
         const constRuct = new ConstRuct()
         expect(isPlainObject(constRuct)).toBe(false)
+    })
+    it(`check: Object.create(null)`, () => {
+        expect(isPlainObject(Object.create(null))).toBe(true)
     })
     it(`check: empty object {}`, () => {
         expect(isPlainObject({})).toBe(true)
