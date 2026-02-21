@@ -214,6 +214,19 @@ export class ComponentTagNode extends ComponentListNode {
             }
         }
     }
+    toggleAttribute(name,state) {
+        name = attrName(name)
+        if(name) {
+            if(state === true) {
+                this.attrs[name] = ''
+            } else {
+                delete this.attrs[name]
+            }
+        }
+    }
+    hasAttribute(name) {
+        return this.attrs.hasOwnProperty(attrName(name))
+    }
     classList() {
         return String(this.attrs.class || '')
             .trim()
