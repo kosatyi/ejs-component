@@ -84,6 +84,24 @@ describe('ComponentTagNode', () => {
         expect(node.getAttribute('dataControl')).toBe('layout')
     })
 
+    it('hasAttribute', () => {
+        const node = new ComponentTagNode('div', {})
+        node.setAttribute('id', 'content')
+        node.setAttribute('dataControl', 'layout')
+        expect(node.hasAttribute('undef')).toBe(false)
+        expect(node.hasAttribute('id')).toBe(true)
+        expect(node.hasAttribute('dataControl')).toBe(true)
+    })
+
+    it('toggleAttribute', () => {
+        const node = new ComponentTagNode('div', {})
+        node.toggleAttribute('dataState',true)
+        expect(node.hasAttribute('dataState')).toBe(true)
+        node.toggleAttribute('dataState',false)
+        expect(node.hasAttribute('dataState')).toBe(false)
+    })
+
+
     it('removeAttribute', () => {
         const node = new ComponentTagNode('div', { class: 'flex' })
         node.removeAttribute('class')

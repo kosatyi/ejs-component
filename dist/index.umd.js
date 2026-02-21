@@ -257,6 +257,19 @@
                 }
             }
         }
+        toggleAttribute(name,state) {
+            name = attrName(name);
+            if(name) {
+                if(state === true) {
+                    this.attrs[name] = '';
+                } else {
+                    delete this.attrs[name];
+                }
+            }
+        }
+        hasAttribute(name) {
+            return this.attrs.hasOwnProperty(attrName(name))
+        }
         classList() {
             return String(this.attrs.class || '')
                 .trim()
@@ -295,6 +308,9 @@
             }
         }
     }
+
+
+
 
     class Component {
         static extend(object, options = {}) {
@@ -360,7 +376,7 @@
             )
         }
         join(array, delimiter) {
-            return [].slice.call(array).join(delimiter).trim()
+            return Array.from(array).join(delimiter).trim()
         }
         hasProp(object, prop) {
             return Object.prototype.hasOwnProperty.call(object, prop)
@@ -388,6 +404,40 @@
                     if (item) item.appendTo(node);
                 });
             }
+        }
+    }
+
+
+    class TreeComponent {
+        constructor(item) {
+            this.root = this.render(item, this);
+        }
+        render(item,scope) {
+            if (Array.isArray(item)) {
+                const [name, props, content] = item;
+                if (isPlainObject(props)) {
+                    if (isString(name)) {
+                        const component = getComponent(name);
+                        if (component === undefined) return
+                        const { $key, ...componentProps } = props;
+                        const result = component(
+                            componentProps,
+                            this.render(content, scope),
+                        );
+                        if (isString($key)) scope[$key] = result;
+                        return result
+                    }
+                    return
+                } else {
+                    return new ComponentListNode(
+                        item.map((child) => this.render(child, scope)),
+                    )
+                }
+            }
+            return new ComponentTextNode(item)
+        }
+        toString() {
+            return String(this.root)
         }
     }
 
@@ -439,6 +489,7 @@
     exports.ComponentSafeNode = ComponentSafeNode;
     exports.ComponentTagNode = ComponentTagNode;
     exports.ComponentTextNode = ComponentTextNode;
+    exports.TreeComponent = TreeComponent;
     exports.configureComponent = configureComponent;
     exports.createComponent = createComponent;
     exports.getComponent = getComponent;
