@@ -11,21 +11,8 @@ import {
     ComponentTagNode,
     ComponentSafeNode,
     ComponentListNode,
-    ComponentTree
+    ComponentTreeNode
 } from '../src/index.js'
-
-describe('Component.extend', () => {
-    it('myMethod', () => {
-        Component.extend({
-            myMethod() {
-                return 'value'
-            }
-        })
-        renderComponent({}, (node, props, self) => {
-            expect(self.myMethod()).toBe('value')
-        })
-    })
-})
 
 describe('ComponentNode', () => {
     const node = new ComponentNode()
@@ -251,45 +238,102 @@ describe('ComponentListNode', () => {
     })
 })
 
+describe('Component.extend', () => {
+    it('myMethod', () => {
+        Component.extend({
+            myMethod() {
+                return 'value'
+            }
+        })
+        renderComponent({}, (node, props, self) => {
+            expect(self.myMethod()).toBe('value')
+        })
+    })
+})
+
+describe('Component.methods', () => {
+    createComponent('customChildComponent', {
+        props: { tag: 'span', attrs: {} },
+        render() {}
+    })
+    it('methods', () => {
+        renderComponent(
+            { tag: 'div', attrs: {}, custom: 'value' },
+            (node, props, self) => {
+                expect(self.tree()).toBeInstanceOf(ComponentTreeNode)
+                expect(self.list()).toBeInstanceOf(ComponentListNode)
+                expect(self.safe('content')).toBeInstanceOf(ComponentSafeNode)
+                expect(self.create('div')).toBeInstanceOf(ComponentTagNode)
+                expect(self.pick(props, ['tag'])).toStrictEqual({ tag: 'div' })
+                expect(self.omit(props, ['tag', 'attrs'])).toStrictEqual({
+                    custom: 'value'
+                })
+                expect(self.call('undefined')).toBeUndefined()
+                expect(self.call('customChildComponent')).toBeInstanceOf(
+                    ComponentTagNode
+                )
+                expect(self.call('customChildComponent', {})).toBeInstanceOf(
+                    ComponentTagNode
+                )
+                expect(self.join([1, 2, 3], '-')).toBe('1-2-3')
+                expect(self.join(null, '-')).toBeUndefined()
+                expect(
+                    self.getNodeItem(['customChildComponent', {}, []])
+                ).toBeInstanceOf(ComponentTagNode)
+                expect(self.getNodeItem(self.empty())).toBeInstanceOf(
+                    ComponentNode
+                )
+                expect(self.getNodeItem({})).toBeUndefined()
+                expect(self.hasProp(props, 'tag')).toBe(true)
+            }
+        )
+    })
+    it('prependList', () => {
+        renderComponent({ tag: 'div', attrs: {} }, (node, props, self) => {
+            self.prependList({}, node)
+            self.prependList([['customChildComponent', {}, []]], node)
+            self.prependList(self.empty(), node)
+            self.prependList([null, undefined, {}], node)
+            self.prependList([['', '', '']], node)
+            expect(node).toMatchObject({
+                tag: 'div',
+                attrs: {},
+                content: [{ tag: 'span', attrs: {}, content: [] }]
+            })
+        })
+    })
+    it('appendList', () => {
+        renderComponent({ tag: 'div', attrs: {} }, (node, props, self) => {
+            self.appendList({}, node)
+            self.appendList([['customChildComponent', {}, []]], node)
+            self.appendList(self.empty(), node)
+            self.appendList([null, undefined, {}], node)
+            self.appendList([['', '', '', '']], node)
+            expect(node).toMatchObject({
+                tag: 'div',
+                attrs: {},
+                content: [
+                    {
+                        tag: 'span',
+                        attrs: {},
+                        content: []
+                    }
+                ]
+            })
+        })
+    })
+})
+
 describe('createComponent', () => {
     it('list', () => {
-        const component = createComponent('list', {})
+        const component = createComponent('customListComponent', {})
         expect(component()).toBeInstanceOf(ComponentListNode)
     })
     it('tag', () => {
-        const item = createComponent('item', {
-            props: {
-                tag: 'div'
-            },
-            render() {}
-        })
-        const component = createComponent('button', {
+        const component = createComponent('customButtonComponent', {
             props: {
                 tag: 'button',
                 attrs: {}
-            },
-            render(node, props, self) {
-                self.create('div')
-                self.safe('content')
-                self.list()
-                self.tree([])
-                self.call('undefined')
-                self.call('list')
-                self.pick(props, ['tag', 'attrs'])
-                self.omit(props, ['name'])
-                self.join([1, 2, 3], '-')
-                self.appendList({}, node)
-                self.prependList({}, node)
-                self.appendList([['item', {}, []]], node)
-                self.prependList([['item', {}, []]], node)
-                self.appendList(self.empty(), node)
-                self.prependList(self.empty(), node)
-                self.appendList([['', '', '', '']], node)
-                self.prependList([['', '', '', '']], node)
-                self.getNodeItem(['item', {}, []])
-                self.getNodeItem(self.empty())
-                self.getNodeItem({})
-                self.hasProp(props, 'tag')
             }
         })
         expect(component({}, ['content'])).toBeInstanceOf(ComponentTagNode)
@@ -351,7 +395,7 @@ describe('configureComponent', () => {
     })
 })
 
-describe('ComponentTree', () => {
+describe('ComponentTreeNode', () => {
     createComponent('slot', {
         props: {
             tag: 'div',
@@ -361,7 +405,7 @@ describe('ComponentTree', () => {
             node.addClass(props.class)
         }
     })
-    const node = new ComponentTree([
+    const node = new ComponentTreeNode([
         'slot',
         { class: 'widget' },
         [
@@ -374,5 +418,8 @@ describe('ComponentTree', () => {
     ])
     it('toString', () => {
         String(node)
+    })
+    it('toJSON', () => {
+        JSON.stringify(node)
     })
 })

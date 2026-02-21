@@ -300,6 +300,47 @@ class ComponentTagNode extends ComponentListNode {
     }
 }
 
+class ComponentTreeNode extends ComponentNode {
+    constructor(content) {
+        super();
+        this.root = this.render(content);
+    }
+    render(item) {
+        if (Array.isArray(item)) {
+            const [name, props, content] = item;
+            if (isPlainObject(props)) {
+                if (isString(name)) {
+                    const component = getComponent(name);
+                    if (component === undefined) return
+                    const { $key, ...componentProps } = props;
+                    const result = component(
+                        componentProps,
+                        this.render(content)
+                    );
+                    if (isString($key)) {
+                        this[$key] = result;
+                    }
+                    return result
+                }
+                return
+            } else {
+                return new ComponentListNode(
+                    item
+                        .filter((child) => child !== undefined)
+                        .map((child) => this.render(child))
+                )
+            }
+        }
+        return new ComponentTextNode(item)
+    }
+    toString() {
+        return String(this.root)
+    }
+    toJSON() {
+        return this.root
+    }
+}
+
 class Component {
     static extend(object, options = {}) {
         Object.entries(object).forEach(([name, value]) => {
@@ -326,7 +367,7 @@ class Component {
         return new ComponentTagNode(tag, attrs, content)
     }
     tree(content) {
-        return new ComponentTree(content)
+        return new ComponentTreeNode(content)
     }
     list(content) {
         return new ComponentListNode(content)
@@ -367,7 +408,9 @@ class Component {
         )
     }
     join(array, delimiter) {
-        return Array.from(array).join(delimiter).trim()
+        if (array) {
+            return Array.from(array).join(delimiter).trim()
+        }
     }
     hasProp(object, prop) {
         return Object.prototype.hasOwnProperty.call(object, prop)
@@ -383,53 +426,18 @@ class Component {
     prependList(list, node) {
         if (Array.isArray(list)) {
             list.reverse().forEach((item) => {
-                item = this.getNodeItem(item);
-                if (item) item.prependTo(node);
+                const child = this.getNodeItem(item);
+                if (child) child.prependTo(node);
             });
         }
     }
     appendList(list, node) {
         if (Array.isArray(list)) {
             list.forEach((item) => {
-                item = this.getNodeItem(item);
-                if (item) item.appendTo(node);
+                const child = this.getNodeItem(item);
+                if (child) child.appendTo(node);
             });
         }
-    }
-}
-
-class ComponentTree {
-    constructor(item) {
-        this.root = this.render(item, this);
-    }
-    render(item, scope) {
-        if (Array.isArray(item)) {
-            const [name, props, content] = item;
-            if (isPlainObject(props)) {
-                if (isString(name)) {
-                    const component = getComponent(name);
-                    if (component === undefined) return
-                    const { $key, ...componentProps } = props;
-                    const result = component(
-                        componentProps,
-                        this.render(content, scope)
-                    );
-                    if (isString($key)) scope[$key] = result;
-                    return result
-                }
-                return
-            } else {
-                return new ComponentListNode(
-                    item
-                        .filter((child) => child !== undefined)
-                        .map((child) => this.render(child, scope))
-                )
-            }
-        }
-        return new ComponentTextNode(item)
-    }
-    toString() {
-        return String(this.root)
     }
 }
 
@@ -453,6 +461,10 @@ const components = new Map();
 const createComponent = (name, config) => {
     const defaults = config.props || {};
     const render = config.render;
+    /**
+     * @param [props]
+     * @param [content]
+     */
     const component = (props, content) => {
         const config = merge({}, defaults, props || {});
         if (content) {
@@ -477,4 +489,4 @@ const getComponent = (name) => {
     return components.get(name)
 };
 
-export { Component, ComponentListNode, ComponentNode, ComponentSafeNode, ComponentTagNode, ComponentTextNode, ComponentTree, configureComponent, createComponent, getComponent, removeComponent, renderComponent };
+export { Component, ComponentListNode, ComponentNode, ComponentSafeNode, ComponentTagNode, ComponentTextNode, ComponentTreeNode, configureComponent, createComponent, getComponent, removeComponent, renderComponent };

@@ -30,9 +30,11 @@ export class ComponentListNode extends ComponentNode {
     empty(): void
 }
 
-export class ComponentTree {
+export class ComponentTreeNode extends ComponentNode {
+    constructor(content: any | any[])
     render(content: any[]): ComponentTreeType
     toString(): string
+    toJSON(): Record<string, any>
 }
 
 export class ComponentTagNode extends ComponentListNode {
@@ -73,7 +75,7 @@ export class Component {
         props?: Record<string, any>,
         content?: any | any[]
     ): ComponentType
-    tree(content?: any[]): ComponentTree
+    tree(content?: any[]): ComponentTreeNode
     list(content?: any[]): ComponentListNode
     safe(value: string): ComponentSafeNode
     create(
@@ -98,7 +100,7 @@ export interface ComponentConfig {
 }
 
 export type ComponentRenderer = (
-    props: Record<string, any>,
+    props?: Record<string, any>,
     content?: any | any[]
 ) => ComponentType
 
