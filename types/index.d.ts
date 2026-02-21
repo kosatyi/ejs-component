@@ -30,6 +30,11 @@ export class ComponentListNode extends ComponentNode {
     empty(): void
 }
 
+export class ComponentTree {
+    render(content: any[]): ComponentTreeType
+    toString(): string
+}
+
 export class ComponentTagNode extends ComponentListNode {
     tag: string
     attrs: Record<string, any>
@@ -68,6 +73,7 @@ export class Component {
         props?: Record<string, any>,
         content?: any | any[]
     ): ComponentType
+    tree(content?: any[]): ComponentTree
     list(content?: any[]): ComponentListNode
     safe(value: string): ComponentSafeNode
     create(

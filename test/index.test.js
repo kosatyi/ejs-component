@@ -10,7 +10,8 @@ import {
     ComponentTextNode,
     ComponentTagNode,
     ComponentSafeNode,
-    ComponentListNode
+    ComponentListNode,
+    ComponentTree
 } from '../src/index.js'
 
 describe('Component.extend', () => {
@@ -84,6 +85,14 @@ describe('ComponentTagNode', () => {
         expect(node.getAttribute('dataControl')).toBe('layout')
     })
 
+    it('getAttribute', () => {
+        const node = new ComponentTagNode('div', { id: 'content' })
+        expect(node.getAttribute([])).toBe(undefined)
+        expect(node.getAttribute(123)).toBe(undefined)
+        expect(node.getAttribute(undefined)).toBe(undefined)
+        expect(node.getAttribute('id')).toBe('content')
+    })
+
     it('hasAttribute', () => {
         const node = new ComponentTagNode('div', {})
         node.setAttribute('id', 'content')
@@ -95,15 +104,15 @@ describe('ComponentTagNode', () => {
 
     it('toggleAttribute', () => {
         const node = new ComponentTagNode('div', {})
-        node.toggleAttribute('dataState',true)
+        node.toggleAttribute('dataState', true)
         expect(node.hasAttribute('dataState')).toBe(true)
-        node.toggleAttribute('dataState',false)
+        node.toggleAttribute('dataState', false)
         expect(node.hasAttribute('dataState')).toBe(false)
     })
 
-
     it('removeAttribute', () => {
         const node = new ComponentTagNode('div', { class: 'flex' })
+        node.removeAttribute([])
         node.removeAttribute('class')
         expect(node.getAttribute('class')).toBeUndefined()
     })
@@ -178,6 +187,8 @@ describe('ComponentTagNode', () => {
     it('remove', () => {
         const parent = new ComponentTagNode('div')
         const child = new ComponentTagNode('span')
+        const text = new ComponentTextNode('content')
+        text.remove()
         parent.append(child)
         child.remove()
         expect(child.parentNode).toBe(null)
@@ -259,10 +270,11 @@ describe('createComponent', () => {
             },
             render(node, props, self) {
                 self.create('div')
-                self.call('undefined')
-                self.call('list')
                 self.safe('content')
                 self.list()
+                self.tree([])
+                self.call('undefined')
+                self.call('list')
                 self.pick(props, ['tag', 'attrs'])
                 self.omit(props, ['name'])
                 self.join([1, 2, 3], '-')
@@ -272,6 +284,8 @@ describe('createComponent', () => {
                 self.prependList([['item', {}, []]], node)
                 self.appendList(self.empty(), node)
                 self.prependList(self.empty(), node)
+                self.appendList([['', '', '', '']], node)
+                self.prependList([['', '', '', '']], node)
                 self.getNodeItem(['item', {}, []])
                 self.getNodeItem(self.empty())
                 self.getNodeItem({})
@@ -281,7 +295,7 @@ describe('createComponent', () => {
         expect(component({}, ['content'])).toBeInstanceOf(ComponentTagNode)
     })
     it('tag:replace', () => {
-        const component = createComponent('div', {
+        const component = createComponent('customComponent', {
             props: {
                 tag: 'div',
                 attrs: {}
@@ -295,7 +309,7 @@ describe('createComponent', () => {
         expect(result.tag).toBe('span')
     })
     it('undefined', () => {
-        const component = createComponent('div', {
+        const component = createComponent('customComponent', {
             props: {},
             render() {
                 throw Error('failed')
@@ -306,19 +320,19 @@ describe('createComponent', () => {
 })
 
 describe('getComponent', () => {
-    createComponent('div', {})
+    createComponent('customComponent', {})
     it('exist', () => {
-        expect(typeof getComponent('div')).toBe('function')
+        expect(typeof getComponent('customComponent')).toBe('function')
     })
     it('undefined', () => {
         expect(typeof getComponent('error')).toBe('undefined')
     })
 })
 describe('removeComponent', () => {
-    createComponent('div', {})
+    createComponent('customComponent', {})
     it('remove', () => {
-        removeComponent('div')
-        expect(typeof getComponent('div')).toBe('undefined')
+        removeComponent('customComponent')
+        expect(typeof getComponent('customComponent')).toBe('undefined')
     })
 })
 
@@ -334,5 +348,31 @@ describe('configureComponent', () => {
             tagNodeToString() {},
             isSafeString() {}
         })
+    })
+})
+
+describe('ComponentTree', () => {
+    createComponent('slot', {
+        props: {
+            tag: 'div',
+            attrs: {}
+        },
+        render(node, props) {
+            node.addClass(props.class)
+        }
+    })
+    const node = new ComponentTree([
+        'slot',
+        { class: 'widget' },
+        [
+            [1, {}],
+            ['undef', {}, 'content'],
+            [('slot', { $key: 'header', class: 'widget-header' }, 'header')],
+            ['slot', { $key: 'content', class: 'widget-content' }, 'content'],
+            ['slot', { $key: 'footer', class: 'widget-footer' }, 'footer']
+        ]
+    ])
+    it('toString', () => {
+        String(node)
     })
 })

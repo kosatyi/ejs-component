@@ -129,11 +129,9 @@ class ComponentNode {
     remove() {
         if (this.hasChildNodes(this.parentNode)) {
             const content = this.parentNode.content;
-            const index = content.indexOf(this.toParent(null));
-            if (!!~index) {
-                content.splice(index, 1);
-            }
+            content.splice(content.indexOf(this.toParent(null)), 1);
         }
+        return this
     }
     toString() {
         return ''
@@ -177,7 +175,9 @@ class ComponentListNode extends ComponentNode {
     constructor(content) {
         super();
         this.content = [];
-        if (Array.isArray(content)) {
+        if (content instanceof ComponentListNode) {
+            this.content = content.content;
+        } else if (Array.isArray(content)) {
             content.forEach(this.append.bind(this));
         } else {
             this.append(content);
@@ -234,13 +234,13 @@ class ComponentTagNode extends ComponentListNode {
     getAttribute(name) {
         name = attrName(name);
         if (name) {
-            return this.attrs[name]
+            return this.attrs[attrName(name)]
         }
     }
     removeAttribute(name) {
         name = attrName(name);
         if (name) {
-            delete this.attrs[name];
+            delete this.attrs[attrName(name)];
         }
     }
     setAttribute(name, value) {
@@ -253,14 +253,12 @@ class ComponentTagNode extends ComponentListNode {
             }
         }
     }
-    toggleAttribute(name,state) {
+    toggleAttribute(name, state) {
         name = attrName(name);
-        if(name) {
-            if(state === true) {
-                this.attrs[name] = '';
-            } else {
-                delete this.attrs[name];
-            }
+        if (state === true) {
+            this.attrs[name] = '';
+        } else {
+            delete this.attrs[name];
         }
     }
     hasAttribute(name) {
@@ -284,11 +282,10 @@ class ComponentTagNode extends ComponentListNode {
     removeClass(...tokens) {
         const classList = this.classList();
         tokens.forEach((token) => {
-            if (token) {
-                const index = classList.indexOf(token);
-                if (!!~index) {
-                    classList.splice(index, 1);
-                }
+            if (!token) return
+            const index = classList.indexOf(token);
+            if (!!~index) {
+                classList.splice(index, 1);
             }
         });
         this.attrs.class = classList.join(' ').trim();
@@ -304,9 +301,6 @@ class ComponentTagNode extends ComponentListNode {
         }
     }
 }
-
-
-
 
 class Component {
     static extend(object, options = {}) {
@@ -332,6 +326,9 @@ class Component {
     }
     create(tag, attrs, content) {
         return new ComponentTagNode(tag, attrs, content)
+    }
+    tree(content) {
+        return new ComponentTree(content)
     }
     list(content) {
         return new ComponentListNode(content)
@@ -379,11 +376,11 @@ class Component {
     }
     getNodeItem(item) {
         if (item instanceof ComponentNode) return item
-        if (Array.isArray(item)) {
+        if (!Array.isArray(item)) return
+        if (item.length > 1 && item.length < 4) {
             const [name, props, content] = item;
             return this.call(name, props, content)
         }
-        return this.empty()
     }
     prependList(list, node) {
         if (Array.isArray(list)) {
@@ -403,12 +400,11 @@ class Component {
     }
 }
 
-
-class TreeComponent {
+class ComponentTree {
     constructor(item) {
         this.root = this.render(item, this);
     }
-    render(item,scope) {
+    render(item, scope) {
         if (Array.isArray(item)) {
             const [name, props, content] = item;
             if (isPlainObject(props)) {
@@ -418,7 +414,7 @@ class TreeComponent {
                     const { $key, ...componentProps } = props;
                     const result = component(
                         componentProps,
-                        this.render(content, scope),
+                        this.render(content, scope)
                     );
                     if (isString($key)) scope[$key] = result;
                     return result
@@ -426,7 +422,9 @@ class TreeComponent {
                 return
             } else {
                 return new ComponentListNode(
-                    item.map((child) => this.render(child, scope)),
+                    item
+                        .filter((child) => child !== undefined)
+                        .map((child) => this.render(child, scope))
                 )
             }
         }
@@ -438,7 +436,9 @@ class TreeComponent {
 }
 
 const renderComponent = (props, render) => {
-    let node, replace, self = new Component();
+    let node,
+        replace,
+        self = new Component();
     if (isString(props.tag)) {
         node = new ComponentTagNode(props.tag, props.attrs, props.content);
     } else {
@@ -485,7 +485,7 @@ exports.ComponentNode = ComponentNode;
 exports.ComponentSafeNode = ComponentSafeNode;
 exports.ComponentTagNode = ComponentTagNode;
 exports.ComponentTextNode = ComponentTextNode;
-exports.TreeComponent = TreeComponent;
+exports.ComponentTree = ComponentTree;
 exports.configureComponent = configureComponent;
 exports.createComponent = createComponent;
 exports.getComponent = getComponent;
