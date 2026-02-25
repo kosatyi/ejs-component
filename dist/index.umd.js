@@ -311,16 +311,16 @@
     class ComponentTreeNode extends ComponentNode {
         constructor(data) {
             super();
-            this.root = this.#render(data);
+            this.root = this.render(data);
         }
-        #render(data) {
+        render(data) {
             if (Array.isArray(data)) {
                 const [name, props, content] = data;
                 if (isString(name) && isPlainObject(props)) {
                     const component = getComponent(name);
                     if (component === undefined) return
                     const { $key, ...componentProps } = props;
-                    const result = component(componentProps, this.#render(content));
+                    const result = component(componentProps, this.render(content));
                     if (isString($key)) {
                         this[$key] = result;
                     }
@@ -329,7 +329,7 @@
                 return new ComponentListNode(
                     data
                         .filter((child) => child !== undefined)
-                        .map((child) => this.#render(child))
+                        .map((child) => this.render(child))
                 )
             }
             return this.getNode(data)
