@@ -175,9 +175,7 @@ class ComponentListNode extends ComponentNode {
     constructor(content) {
         super();
         this.content = [];
-        if (content instanceof ComponentListNode) {
-            this.content = Array.from(content.content);
-        } else if (Array.isArray(content)) {
+        if (Array.isArray(content)) {
             content.forEach(this.append.bind(this));
         } else {
             this.append(content);

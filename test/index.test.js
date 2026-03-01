@@ -224,16 +224,30 @@ describe('ComponentSafeNode', () => {
 })
 
 describe('ComponentListNode', () => {
-    const node = new ComponentListNode(['List', 'Node'])
+    it('ComponentListNode as child', () => {
+        const child = new ComponentListNode(['List', 'Node'])
+        const parent = new ComponentListNode(child)
+        expect(parent.toString()).toBe('ListNode')
+    })
+    it('ComponentTagNode as child', () => {
+        const child = new ComponentTagNode('span', {}, 'TagNode')
+        const parent = new ComponentListNode(child)
+        expect(parent.toString()).toBe(
+            '{"tag":"span","attrs":{},"content":[{"text":"TagNode"}]}'
+        )
+    })
     it('toString', () => {
+        const node = new ComponentListNode(['List', 'Node'])
         expect(node.toString()).toBe('ListNode')
     })
     it('toJSON', () => {
+        const node = new ComponentListNode(['List', 'Node'])
         expect(node.toJSON()).toMatchObject({
             content: [{ text: 'List' }, { text: 'Node' }]
         })
     })
     it('empty', () => {
+        const node = new ComponentListNode(['List', 'Node'])
         node.empty()
         expect(node.content.length).toEqual(0)
     })
